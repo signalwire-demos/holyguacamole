@@ -1,0 +1,108 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Dokku Services Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Define which backing services your app needs.
+# Services are automatically provisioned and linked during deployment.
+#
+# When a service is linked, its connection URL is automatically
+# injected as an environment variable (e.g., DATABASE_URL, REDIS_URL).
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Environment variable: DATABASE_URL
+  # Format: postgres://user:pass@host:5432/database
+  postgres:
+    enabled: false  # Set to true to enable
+    environments:
+      production:
+        # Production gets its own dedicated database
+        dedicated: true
+      staging:
+        # Staging gets its own database
+        dedicated: true
+      preview:
+        # All preview apps share a single database to save resources
+        shared: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Redis Cache/Queue
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Environment variable: REDIS_URL
+  # Format: redis://host:6379
+  redis:
+    enabled: false  # Set to true to enable
+    environments:
+      production:
+        dedicated: true
+      staging:
+        dedicated: true
+      preview:
+        shared: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MySQL Database
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Environment variable: DATABASE_URL
+  # Format: mysql://user:pass@host:3306/database
+  mysql:
+    enabled: false
+    environments:
+      preview:
+        shared: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MongoDB
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Environment variable: MONGO_URL
+  # Format: mongodb://user:pass@host:27017/database
+  mongo:
+    enabled: false
+    environments:
+      preview:
+        shared: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # RabbitMQ Message Queue
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Environment variable: RABBITMQ_URL
+  # Format: amqp://user:pass@host:5672
+  rabbitmq:
+    enabled: false
+    environments:
+      preview:
+        # Don't provision RabbitMQ for previews (too expensive)
+        enabled: false
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Elasticsearch
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Environment variable: ELASTICSEARCH_URL
+  # Format: http://host:9200
+  elasticsearch:
+    enabled: false
+    environments:
+      preview:
+        enabled: false
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# External/Managed Services
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# For production, you may want to use managed services like AWS RDS,
+# ElastiCache, etc. Define the connection URLs here (reference GitHub secrets).
+#
+# These override the Dokku-managed services for the specified environment.
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# external_services:
+#   production:
+#     DATABASE_URL: "${secrets.PROD_DATABASE_URL}"
+#     REDIS_URL: "${secrets.PROD_REDIS_URL}"
+#   staging:
+#     DATABASE_URL: "${secrets.STAGING_DATABASE_URL}"

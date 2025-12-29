@@ -1,0 +1,63 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Dokku App Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Configuration for your Dokku app deployment.
+# These settings are applied during the deployment workflow.
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Resource Limits
+# ─────────────────────────────────────────────────────────────────────────────
+# Memory: 256m, 512m, 1g, 2g, etc.
+# CPU: Number of cores (can be fractional, e.g., 0.5)
+resources:
+  memory: 512m
+  cpu: 1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Health Check
+# ─────────────────────────────────────────────────────────────────────────────
+# Path that returns 200 OK when app is healthy
+healthcheck:
+  path: /health
+  timeout: 30
+  attempts: 5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Scaling
+# ─────────────────────────────────────────────────────────────────────────────
+# Number of web workers (dynos)
+scale:
+  web: 1
+  # worker: 1  # Uncomment for background workers
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Custom Domains
+# ─────────────────────────────────────────────────────────────────────────────
+# Additional domains for this app (requires DNS configuration)
+# custom_domains:
+#   - www.example.com
+#   - api.example.com
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Environment-Specific Overrides
+# ─────────────────────────────────────────────────────────────────────────────
+environments:
+  production:
+    resources:
+      memory: 1g
+      cpu: 2
+    scale:
+      web: 2
+
+  staging:
+    resources:
+      memory: 512m
+      cpu: 1
+
+  preview:
+    resources:
+      memory: 256m
+      cpu: 0.5

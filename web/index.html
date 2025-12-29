@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holy Guacamole! - Drive-Thru Order System</title>
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Holy Guacamole! - AI-Powered Drive-Thru">
+    <meta property="og:description" content="Order delicious Mexican food with Sigmond, our AI drive-thru assistant. Fresh tacos, burritos, and more!">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/logo.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/favicon.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            position: relative;
+        }
+        
+        /* Terracotta roof tiles pattern */
+        .roof-tiles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: 
+                repeating-linear-gradient(
+                    90deg,
+                    #B85450 0px,
+                    #C1665A 15px,
+                    #9C4A45 30px,
+                    #B85450 45px
+                ),
+                repeating-conic-gradient(
+                    from 180deg at 50% 0%,
+                    #A0522D 0deg,
+                    #C1665A 60deg,
+                    #8B4513 120deg,
+                    #A0522D 180deg
+                );
+            background-size: 90px 50px, 45px 25px;
+            background-position: 0 0, 0 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .roof-title {
+            position: relative;
+            z-index: 2;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        .roof-title h1 {
+            font-size: 2rem;
+            margin: 0;
+            line-height: 1.2;
+        }
+        
+        .roof-title p {
+            font-size: 1rem;
+            margin: 0;
+            opacity: 0.95;
+        }
+        
+        .roof-tiles::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: repeating-conic-gradient(
+                from 0deg at 45px 50px,
+                transparent 0deg 180deg,
+                rgba(139, 69, 19, 0.3) 180deg 360deg
+            );
+            background-size: 90px 50px;
+            background-position: 0 0;
+        }
+        
+        .roof-tiles::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.4), transparent);
+        }
+
+        .github-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            color: #333;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .github-link:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        .github-link svg {
+            width: 20px;
+            height: 20px;
+            fill: #333;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            padding-top: 120px; /* Space for roof tiles */
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .right-panel {
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #C1272D;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #FFD700;
+        }
+
+        #video-container {
+            background: linear-gradient(135deg, #F5E6D3 0%, #E6D7B8 50%, #D4C5A0 100%);
+            border-radius: 15px;
+            width: 100%;
+            max-width: 810px;
+            max-height: 540px; /* Maximum height to maintain ratio */
+            aspect-ratio: 1620 / 1080;  /* Maintains exact aspect ratio */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 0 !important;
+            margin: 0 auto !important;
+        }
+        
+        #video-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Style any video element SignalWire injects */
+        #video-container video,
+        #video-container > div > video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important; /* Contain to maintain aspect ratio */
+            border-radius: 15px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* SignalWire may inject wrapper divs */
+        #video-container > div {
+            width: 100% !important;
+            height: 100% !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* Hide local video if present */
+        #video-container video[id*="local"],
+        #video-container video.localVideo {
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #568203;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #6A9B04;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.danger {
+            background: #C1272D;
+        }
+
+        button.danger:hover {
+            background: #D43840;
+        }
+
+        #order-display {
+            min-height: 300px;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #FFF8DC;
+            border-radius: 8px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .order-item-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .order-item-price {
+            color: #568203;
+            font-weight: bold;
+        }
+
+        .order-totals {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #FFD700;
+        }
+
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 10px;
+            font-size: 1.1rem;
+        }
+
+        .total-line.final {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #C1272D;
+            background: #FFD700;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        #status {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .status-greeting {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .status-ordering {
+            background: #FFF3E0;
+            color: #E65100;
+        }
+
+        .status-confirming {
+            background: #E3F2FD;
+            color: #1565C0;
+        }
+
+        .status-payment {
+            background: #FFD700;
+            color: #333;
+        }
+
+        /* Two-column layout for menu categories */
+        #menu-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .menu-category {
+            background: #FFF8DC;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        
+        .menu-category-title {
+            font-weight: bold;
+            color: #C1272D;
+            font-size: 1rem;
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid #FFD700;
+        }
+
+        .menu-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2px;
+            margin-top: 3px;
+        }
+
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 4px 8px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #E5E5E5;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+
+        .menu-item:hover {
+            border-color: #568203;
+            background: #F9FFF5;
+            transform: translateX(3px);
+        }
+
+        .menu-item-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.85rem;
+            margin-bottom: 1px;
+        }
+        
+        .menu-item-desc {
+            color: #666;
+            font-size: 0.7rem;
+            line-height: 1.1;
+        }
+
+        .menu-item-price {
+            color: #568203;
+            font-weight: 700;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            margin-left: 8px;
+        }
+        
+        /* Responsive: single column on small screens */
+        @media (max-width: 768px) {
+            #menu-display {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        #result-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #568203;
+            color: white;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        #result-message.show {
+            opacity: 1;
+        }
+
+        .order-number-display {
+            background: #FFD700;
+            color: #333;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        #event-log {
+            max-height: 600px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .event-entry {
+            padding: 5px;
+            margin-bottom: 5px;
+            border-left: 3px solid #ccc;
+            padding-left: 10px;
+        }
+
+        .event-entry.user-event {
+            border-color: #568203;
+            background: #E8F5E9;
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .left-panel {
+                width: 100%;
+                max-width: 810px;
+            }
+
+            .right-panel {
+                width: 100%;
+                max-width: 810px;
+            }
+            
+            #video-container {
+                max-width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .github-link {
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+
+            .github-link svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            .roof-title h1 {
+                font-size: 1.5rem;
+            }
+
+            .roof-title p {
+                font-size: 0.9rem;
+            }
+            
+            .main-container {
+                padding: 10px;
+                padding-top: 110px;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            /* Merge panels into single column */
+            .left-panel,
+            .right-panel {
+                width: 100%;
+                max-width: none;
+                display: contents; /* Remove panel wrapper, let children flow */
+            }
+            
+            /* Order elements for mobile */
+            #video-container {
+                order: 1;
+                margin-bottom: 20px;
+                max-height: 60vh; /* Limit video height on mobile */
+            }
+            
+            #status {
+                order: 2;
+            }
+            
+            #controls-card {
+                order: 3;
+            }
+            
+            #order-display {
+                order: 4;
+            }
+            
+            #order-number {
+                order: 5;
+            }
+            
+            #menu-card {
+                order: 6;
+                width: 100%; /* Full width on mobile */
+            }
+            
+            #event-log-container {
+                order: 7;
+            }
+            
+            /* Make all cards full width on mobile */
+            .card {
+                width: 100%;
+            }
+            
+        }
+    </style>
+</head>
+<body>
+    <a href="https://github.com/signalwire/sigmond-holyguacamole" target="_blank" rel="noopener noreferrer" class="github-link">
+        <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+        </svg>
+        View on GitHub
+    </a>
+
+    <div class="roof-tiles">
+        <div class="roof-title">
+            <h1>🥑 Holy Guacamole!</h1>
+            <p>AI-Powered Drive-Thru Ordering</p>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="left-panel">
+            <!-- Video/Avatar Section -->
+            <div id="video-container">
+                <!-- SignalWire SDK will inject video elements here -->
+                <div id="video-placeholder">
+                    <img src="/logo.png" alt="Holy Guacamole Logo" style="max-width: 200px;">
+                    <p style="color: #568203; margin-top: 20px; font-size: 1.1rem;">Click "Start Ordering" to begin</p>
+                </div>
+            </div>
+
+            <!-- Menu Display -->
+            <div class="card" id="menu-card">
+                <div class="card-title">Menu</div>
+                <div id="menu-display">
+                    <!-- Menu will be loaded dynamically from backend -->
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <!-- Status Display -->
+            <div id="status" class="status-greeting">
+                Welcome to Holy Guacamole!
+            </div>
+
+            <!-- Order Display -->
+            <div class="card" id="order-display">
+                <div class="card-title">Your Order</div>
+                <div id="order-items">
+                    <div style="text-align: center; color: #999; padding: 50px;">
+                        Your order will appear here
+                    </div>
+                </div>
+                <div class="order-totals" id="order-totals" style="display: none;">
+                    <div class="total-line">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="total-line">
+                        <span>Tax:</span>
+                        <span id="tax">$0.00</span>
+                    </div>
+                    <div class="total-line final">
+                        <span>Total:</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Number Display (hidden initially) -->
+            <div class="order-number-display" id="order-number" style="display: none;">
+                Order #<span id="order-number-value">0000</span>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="card" id="controls-card">
+                <div class="card-title">Controls</div>
+                <div class="controls">
+                    <button id="connectBtn">🎤 Start Ordering</button>
+                    <button id="hangupBtn" style="display:none;" class="danger">📞 End Call</button>
+                    <button id="muteBtn" style="display:none;">🔇 Mute</button>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label>
+                        <input type="checkbox" id="startMuted"> Start muted
+                    </label>
+                    <label style="margin-left: 20px;">
+                        <input type="checkbox" id="showLog"> Show event log
+                    </label>
+                </div>
+            </div>
+
+            <!-- Event Log -->
+            <div class="card" id="event-log-container" style="display: none;">
+                <div class="card-title">Event Log</div>
+                <div id="event-log">
+                    <div id="event-entries"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Message Overlay -->
+    <div id="result-message"></div>
+
+    <!-- SignalWire SDK from CDN -->
+    <script src="https://cdn.signalwire.com/@signalwire/client"></script>
+    <!-- App Logic -->
+    <script src="/app.js"></script>
+</body>
+</html>

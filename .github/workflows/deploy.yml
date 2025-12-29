@@ -1,0 +1,23 @@
+# Deploy to Dokku - calls reusable workflow from dokku-deploy-system
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, staging, develop]
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    uses: signalwire-demos/dokku-deploy-system/.github/workflows/deploy.yml@main
+    secrets: inherit
+    # Optional: customize health check path
+    # with:
+    #   health_check_path: '/health'

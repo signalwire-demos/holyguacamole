@@ -1,0 +1,17 @@
+# Preview environments for pull requests - calls reusable workflow from dokku-deploy-system
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+
+jobs:
+  preview:
+    uses: signalwire-demos/dokku-deploy-system/.github/workflows/preview.yml@main
+    secrets: inherit
+    # Optional: customize memory limit for previews
+    # with:
+    #   memory_limit: '256m'
