@@ -1671,6 +1671,9 @@ def create_server():
     return server
 
 
+# Create server and expose app for WSGI/ASGI servers (Gunicorn, Uvicorn, etc.)
+server = create_server()
+app = server.app
+
 if __name__ == "__main__":
-    server = create_server()
     server.run()
