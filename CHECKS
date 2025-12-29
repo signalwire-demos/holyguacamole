@@ -1,0 +1,37 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHECKS - Health check configuration for zero-downtime deployments
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Dokku uses this file to verify your app is healthy before switching traffic.
+# This enables zero-downtime deployments.
+#
+# Format:
+#   <path> [<expected-content>]
+#
+# Settings (optional):
+#   WAIT=<seconds>      Initial wait before checking (default: 5)
+#   TIMEOUT=<seconds>   Timeout for each check (default: 30)
+#   ATTEMPTS=<number>   Number of attempts before failing (default: 5)
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Settings
+WAIT=5
+TIMEOUT=30
+ATTEMPTS=5
+
+# Health checks
+# The app must return HTTP 2xx for these paths
+
+# Primary health endpoint
+/health
+
+# Readiness endpoint (optional)
+/ready
+
+# With expected content (optional):
+# /health ok
+# /api/status {"status":"healthy"}
+
+# Root endpoint (fallback):
+# /

@@ -1657,6 +1657,17 @@ def create_server():
     server = AgentServer(host=host, port=port)
     server.register(HolyGuacamoleAgent(), "/swml")
 
+    # Health check endpoints for deployment verification
+    @server.app.get("/health")
+    def health_check():
+        """Health check endpoint for deployment verification."""
+        return {"status": "healthy", "agent": "holyguacamole"}
+
+    @server.app.get("/ready")
+    def ready_check():
+        """Readiness check - verifies server is ready to accept requests."""
+        return {"status": "ready"}
+
     # Add custom API routes for the web UI
     @server.app.get("/api/menu")
     async def get_menu():
