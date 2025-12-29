@@ -126,8 +126,8 @@ def add_item(args, raw_data):
 
 ```bash
 # Clone and setup
-git clone https://github.com/signalwire/sigmond-holyguacamole.git
-cd sigmond-holyguacamole
+git clone https://github.com/signalwire-demos/holyguacamole.git
+cd holyguacamole
 
 # Create virtual environment
 python -m venv venv
