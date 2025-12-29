@@ -37,8 +37,8 @@ scale:
 # Custom Domains
 # ─────────────────────────────────────────────────────────────────────────────
 # Additional domains for this app (requires DNS configuration)
-# custom_domains:
-#   - www.example.com
+custom_domains:
+  - holyguacamole.signalwire.me
 #   - api.example.com
 
 # ─────────────────────────────────────────────────────────────────────────────
