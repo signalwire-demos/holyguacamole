@@ -1,9 +1,9 @@
 // Holy Guacamole! Drive-Thru Order System
 // Frontend handles display only - ALL pricing comes from backend
 
-// Configuration
-const DESTINATION = '/public/holy-guacamole';
-const STATIC_TOKEN = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwidHlwIjoiU0FUIiwiY2giOiJwdWMuc2lnbmFsd2lyZS5jb20ifQ..D_TMjgEuu4yuF6fX.t47i-K3zYMSIU3IdFOXmC_8JtIVlDXkanuID9kEq1uM_cmJwnNtEHIG-LCYLMB5l2MfL5veedK2cejbD_o_dj-pSZgYqh4Qn9e7Lmv1BQBnqwCLsc7nZ1U3kg0c6TYZvFWOR3rgrUAlBcP4G_VSl7IjgRorh2dL4BoCTsMSvuLoKyBzvRs2JbZGmJ9UjI0JYzXdlVf1h24Pa3MP0SoPwyQ9Z7wGmxIXdHJ_ovdVspkCO60oFlmIMhn_WbW2jGq-n8TkclEkM_cLcz1OjUDhai_xMYeqBJlfJNz2OoD8UIg1e60d0fc2NP84wU1_uYgZ4CCe9lIuVmzpsQkun-pfMDMgUcR9Uf4YpVEZDToecvP7tzgSgwvTNR3o9FBEHhDienhuYiHE35uWs9ktoElMxYR28BdF7H3YwFuzg2TvHtzUhi80IORVPLPWtH4goagDFbel_zEWc_nn8xcahpbrC4sKlTIJ1I9iPfDsCOAps30uVlHFRq7LElGQw_15QqU2S13GDneBv9uAQGRVxnKD5h_moogKfuofRp3EcCxTe.65H02il38BhCkGPkDVM8xA';
+// Connection state - fetched from /get_token endpoint
+let currentToken = null;
+let currentDestination = null;
 
 let client;
 let roomSession;
@@ -481,40 +481,49 @@ async function connect() {
     try {
         connectBtn.disabled = true;
         connectBtn.textContent = 'Connecting...';
-        updateStatus('greeting', 'Connecting to Sigmond...');
-        
-        // Check if token is valid
-        if (!STATIC_TOKEN || STATIC_TOKEN === 'YOUR_TOKEN_HERE') {
-            throw new Error('Please update STATIC_TOKEN with your actual SignalWire token');
+        updateStatus('greeting', 'Getting token...');
+
+        // Fetch token and destination from backend
+        const tokenResp = await fetch('/get_token');
+        const tokenData = await tokenResp.json();
+
+        if (tokenData.error) {
+            throw new Error(tokenData.error);
         }
-        
+
+        currentToken = tokenData.token;
+        currentDestination = tokenData.address;
+
+        console.log('Token received, destination:', currentDestination);
+        updateStatus('greeting', 'Connecting to Sigmond...');
+
         // Initialize SignalWire client from CDN
         // The CDN exports SignalWire.SignalWire as the main function
         if (window.SignalWire && typeof window.SignalWire.SignalWire === 'function') {
             console.log('Initializing SignalWire client...');
             client = await window.SignalWire.SignalWire({
-                token: STATIC_TOKEN,
+                token: currentToken,
                 logLevel: 'debug'
             });
         } else {
             console.error('SignalWire SDK structure:', window.SignalWire);
             throw new Error('SignalWire.SignalWire function not found');
         }
-        
+
         console.log('Client initialized successfully');
-        
+
         // Subscribe to user events at client level
         client.on('user_event', (params) => {
-            console.log('🌮 CLIENT EVENT: user_event', params);
+            console.log('CLIENT EVENT: user_event', params);
             handleUserEvent(params);
         });
-        
+
         // Get video container for remote video
         const videoContainer = document.getElementById('video-container');
-        
+
         // Dial the call with video negotiation
         roomSession = await client.dial({
-            to: DESTINATION,
+            to: currentDestination,
             rootElement: videoContainer,
             audio: {
                 echoCancellation: true,
