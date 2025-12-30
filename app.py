@@ -117,12 +117,12 @@ def get_signalwire_host():
     return f"{space}.signalwire.com"
 
 
-def find_sip_address(addresses, agent_name):
+def find_resource_address(addresses, agent_name):
     """
-    Find the SIP address matching /public/{agent_name} from a list of addresses.
+    Find the resource address matching /public/{agent_name} from a list of addresses.
 
     When phone numbers are attached to a handler, multiple addresses exist.
-    We want the SIP address (e.g., /public/holyguacamole) not the phone number address.
+    We want the resource address (e.g., /public/holyguacamole) not the phone number address.
     """
     expected_address = f"/public/{agent_name}"
 
@@ -190,14 +190,14 @@ def find_existing_handler(sw_host, auth, agent_name):
                 )
                 if addr_resp.status_code == 200:
                     addresses = addr_resp.json().get("data", [])
-                    sip_addr = find_sip_address(addresses, agent_name)
-                    if sip_addr:
+                    resource_addr = find_resource_address(addresses, agent_name)
+                    if resource_addr:
                         return {
                             "id": handler_id,
                             "name": handler_name,
                             "url": handler_url,
-                            "address_id": sip_addr["id"],
-                            "address": sip_addr["channels"]["audio"]
+                            "address_id": resource_addr["id"],
+                            "address": resource_addr["channels"]["audio"]
                         }
     except Exception as e:
         logger.error(f"Error finding existing handler: {e}")
@@ -303,10 +303,10 @@ def setup_swml_handler():
             )
             addr_resp.raise_for_status()
             addresses = addr_resp.json().get("data", [])
-            sip_addr = find_sip_address(addresses, agent_name)
-            if sip_addr:
-                swml_handler_info["address_id"] = sip_addr["id"]
-                swml_handler_info["address"] = sip_addr["channels"]["audio"]
+            resource_addr = find_resource_address(addresses, agent_name)
+            if resource_addr:
+                swml_handler_info["address_id"] = resource_addr["id"]
+                swml_handler_info["address"] = resource_addr["channels"]["audio"]
 
             logger.info(f"Created SWML handler '{agent_name}' with address: {swml_handler_info.get('address')}")
         except Exception as e:
