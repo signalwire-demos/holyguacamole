@@ -1812,7 +1812,7 @@ class HolyGuacamoleAgent(AgentBase):
         )
 
         # Optional post-prompt URL from environment
-        post_prompt_url = os.environ.get("GUACAMOLE_POST_PROMPT_URL")
+        post_prompt_url = os.environ.get("POST_PROMPT_URL")
         if post_prompt_url:
             self.set_post_prompt("Summarize the conversation, including all the details about the food order and any special requests.")
             self.set_post_prompt_url(post_prompt_url)
