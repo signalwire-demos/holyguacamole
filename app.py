@@ -1337,18 +1337,17 @@ class HolyGuacamoleAgent(AgentBase):
             current_step = global_data.get("current_step", "greeting")
             if current_step == "taking_order":
                 # Stay in taking_order for "never mind, I just want X" scenarios
+                # (no step change needed)
                 response = "Alright, I've cleared everything. What would you like?"
                 result = SwaigFunctionResult(response)
                 save_order_state(result, order_state, global_data)
-                # Stay in taking_order state
-                result.context = "taking_order"
             else:
-                # From confirming state or elsewhere, go back to greeting
+                # From confirming_order, go back to taking a fresh order
+                # (greeting is not a valid transition from confirming_order)
                 response = "Order cancelled. How can I help you today?"
                 result = SwaigFunctionResult(response)
                 save_order_state(result, order_state, global_data)
-                # Go back to greeting
-                result.context = "greeting"
+                result.swml_change_step("taking_order")
             
             # Send event to UI
             result.add_action("user_event", {
