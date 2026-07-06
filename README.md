@@ -142,8 +142,8 @@ pip install -r requirements.txt
 The agent uses the `AgentServer` pattern for clean separation of concerns:
 
 ```python
-from signalwire_agents import AgentBase, AgentServer
-from signalwire_agents.core.function_result import SwaigFunctionResult
+from signalwire import AgentBase, AgentServer
+from signalwire.core.function_result import SwaigFunctionResult
 from pathlib import Path
 
 class HolyGuacamoleAgent(AgentBase):
@@ -669,7 +669,7 @@ The result is an AI agent that behaves consistently, handles complex scenarios, 
 
 - **Live Demo**: [https://holyguacamole.signalwire.me](https://holyguacamole.signalwire.me)
 - **SignalWire Docs**: [developer.signalwire.com](https://developer.signalwire.com)
-- **AI Agent SDK**: [github.com/signalwire/signalwire-agents](https://github.com/signalwire/signalwire-agents)
+- **SignalWire Python SDK**: [github.com/signalwire/signalwire-python](https://github.com/signalwire/signalwire-python)
 - **Support**: Open an issue on GitHub
 
 ## License

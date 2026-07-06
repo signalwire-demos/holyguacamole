@@ -620,7 +620,7 @@
         <div class="left-panel">
             <!-- Video/Avatar Section -->
             <div id="video-container">
-                <!-- SignalWire SDK will inject video elements here -->
+                <!-- app.js attaches the remote (avatar) stream to a video element here -->
                 <div id="video-placeholder">
                     <img src="/logo.png" alt="Holy Guacamole Logo" style="max-width: 200px;">
                     <p style="color: #568203; margin-top: 20px; font-size: 1.1rem;">Click "Start Ordering" to begin</p>
@@ -702,8 +702,8 @@
     <!-- Result Message Overlay -->
     <div id="result-message"></div>
 
-    <!-- SignalWire SDK from CDN -->
-    <script src="https://cdn.signalwire.com/@signalwire/client"></script>
+    <!-- SignalWire Browser SDK v4 from CDN -->
+    <script src="https://cdn.signalwire.com/@signalwire/js@4.0.0-rc.0"></script>
     <!-- App Logic -->
     <script src="/app.js"></script>
 </body>
