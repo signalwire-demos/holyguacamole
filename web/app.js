@@ -5,6 +5,88 @@
 let currentToken = null;
 let currentDestination = null;
 
+// Voice settings - stored in guacamoleSettings object
+let guacamoleSettings = {
+    voiceSelection: null  // Will be set after loading voices
+};
+
+// Load saved settings from localStorage
+const savedSettings = localStorage.getItem('guacamoleSettings');
+if (savedSettings) {
+    try {
+        guacamoleSettings = JSON.parse(savedSettings);
+        console.log('Loaded guacamoleSettings:', guacamoleSettings);
+    } catch (e) {
+        console.error('Error parsing guacamoleSettings:', e);
+    }
+}
+
+// Load voices from JSON files and populate dropdown
+async function loadVoices() {
+    const voiceSelect = document.getElementById('voiceSelect');
+    if (!voiceSelect) return;
+
+    try {
+        const [inworldResp, elevenlabsResp] = await Promise.all([
+            fetch('/inworld_voices.json'),
+            fetch('/elevenlabs_voices.json')
+        ]);
+
+        const inworldVoices = await inworldResp.json();
+        const elevenlabsVoices = await elevenlabsResp.json();
+
+        voiceSelect.innerHTML = '';
+
+        const inworldGroup = document.createElement('optgroup');
+        inworldGroup.label = 'Inworld';
+        inworldVoices.forEach(voice => {
+            const option = document.createElement('option');
+            option.value = voice.voiceId;
+            option.textContent = voice.displayName;
+            option.title = voice.description;
+            inworldGroup.appendChild(option);
+        });
+        voiceSelect.appendChild(inworldGroup);
+
+        const elevenlabsGroup = document.createElement('optgroup');
+        elevenlabsGroup.label = 'ElevenLabs';
+        elevenlabsVoices.forEach(voice => {
+            const option = document.createElement('option');
+            option.value = voice.voiceId;
+            option.textContent = voice.displayName;
+            option.title = voice.description;
+            elevenlabsGroup.appendChild(option);
+        });
+        voiceSelect.appendChild(elevenlabsGroup);
+
+        if (!guacamoleSettings.voiceSelection && inworldVoices.length > 0) {
+            guacamoleSettings.voiceSelection = inworldVoices[0].voiceId;
+        }
+
+        if (guacamoleSettings.voiceSelection) {
+            voiceSelect.value = guacamoleSettings.voiceSelection;
+        }
+
+        voiceSelect.addEventListener('change', (e) => {
+            guacamoleSettings.voiceSelection = e.target.value;
+            localStorage.setItem('guacamoleSettings', JSON.stringify(guacamoleSettings));
+            console.log('Voice saved to localStorage:', guacamoleSettings);
+        });
+
+        console.log('Loaded voices:', inworldVoices.length + elevenlabsVoices.length);
+    } catch (error) {
+        console.error('Failed to load voices:', error);
+        const option = document.createElement('option');
+        option.value = 'inworld.Elizabeth:inworld-tts-1.5-max';
+        option.textContent = 'Elizabeth (Default)';
+        voiceSelect.appendChild(option);
+        guacamoleSettings.voiceSelection = option.value;
+    }
+}
+
+// Initialize voices on load
+loadVoices();
+
 let client;
 let roomSession;
 let isMuted = false;
@@ -483,9 +565,11 @@ async function connect() {
         connectBtn.textContent = 'Connecting...';
         updateStatus('greeting', 'Getting token...');
 
-        // Fetch token and destination from backend
-        const tokenResp = await fetch('/get_token');
+        // Fetch token and destination from backend, passing selected voice
+        const voiceParam = encodeURIComponent(guacamoleSettings.voiceSelection);
+        const tokenResp = await fetch(`/get_token?voice=${voiceParam}`);
         const tokenData = await tokenResp.json();
+        console.log('Selected voice:', guacamoleSettings.voiceSelection);
 
         if (tokenData.error) {
             throw new Error(tokenData.error);

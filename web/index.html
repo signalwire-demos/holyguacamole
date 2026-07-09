@@ -687,6 +687,14 @@
                         <input type="checkbox" id="showLog"> Show event log
                     </label>
                 </div>
+                <div style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <span>🗣️ Voice:</span>
+                        <select id="voiceSelect" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #568203; font-size: 0.9rem; cursor: pointer;">
+                            <!-- Voices loaded dynamically from JSON -->
+                        </select>
+                    </label>
+                </div>
             </div>
 
             <!-- Event Log -->
@@ -705,6 +713,6 @@
     <!-- SignalWire SDK from CDN -->
     <script src="https://cdn.signalwire.com/@signalwire/client"></script>
     <!-- App Logic -->
-    <script src="/app.js"></script>
+    <script src="/app.js?v=3"></script>
 </body>
 </html>

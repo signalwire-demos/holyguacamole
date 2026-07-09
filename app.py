@@ -34,6 +34,22 @@ swml_handler_info = {
     "address": None       # The SIP address clients dial to reach the agent
 }
 
+# Voice store file path (shared between workers)
+VOICE_STORE_FILE = "/tmp/guacamole_voice.txt"
+
+def get_stored_voice():
+    """Get voice from shared file store."""
+    try:
+        with open(VOICE_STORE_FILE, 'r') as f:
+            return f.read().strip()
+    except:
+        return None
+
+def set_stored_voice(voice):
+    """Set voice in shared file store."""
+    with open(VOICE_STORE_FILE, 'w') as f:
+        f.write(voice)
+
 # Import for TF-IDF vector matching
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -331,7 +347,16 @@ class HolyGuacamoleAgent(AgentBase):
             route="/swml",  # SWML endpoint path
             record_call=True
         )
-        
+
+        # Set AI model + barge behavior. transparent_barge defaults to true
+        # in the engine (AI waits for the user to finish before responding
+        # when they talk over the agent); set it explicitly so the intent is
+        # documented in the rendered SWML rather than relying on the default.
+        self.set_params({
+            "ai_model": "gpt-4.1-mini",
+            "transparent_barge": True
+        })
+
         # Initialize TF-IDF vectorizer if available
         self.vectorizer = None
         self.menu_vectors = None
@@ -1784,12 +1809,7 @@ class HolyGuacamoleAgent(AgentBase):
             
             return result
         
-        # Configure voice
-        self.add_language(
-            name="English",
-            code="en-US",
-            voice="elevenlabs.adam"
-        )
+        # Voice is configured dynamically in on_swml_request based on user selection
         
         # Add speech hints
         self.add_hints([
@@ -1855,11 +1875,34 @@ class HolyGuacamoleAgent(AgentBase):
             self.set_param("video_talking_file", f"{base_url}/sigmond_cc_talking.mp4")
             print(f"Set video URLs to use host: {base_url}")
         else:
-            # Fallback to default if no host header found
-            self.set_param("video_idle_file", "https://briankwest.ngrok.io/sigmond_cc_idle.mp4")
-            self.set_param("video_talking_file", "https://briankwest.ngrok.io/sigmond_cc_talking.mp4")
-            print("No host header found, using default video URLs")
-        
+            # No Host header — fall back to the configured public base URL
+            # (same precedence as the SWML handler setup above) instead of a
+            # hardcoded personal dev tunnel.
+            base_url = os.getenv("SWML_PROXY_URL_BASE", os.getenv("APP_URL", "")).rstrip("/")
+            if base_url:
+                self.set_param("video_idle_file", f"{base_url}/sigmond_cc_idle.mp4")
+                self.set_param("video_talking_file", f"{base_url}/sigmond_cc_talking.mp4")
+                print(f"No host header found, using configured base URL: {base_url}")
+            else:
+                print("No host header and no SWML_PROXY_URL_BASE/APP_URL — leaving video URLs unset")
+
+        # Get selected voice from shared file (set by /get_token endpoint)
+        default_voice = "inworld.Elizabeth:inworld-tts-1.5-max"
+        selected_voice = get_stored_voice() or default_voice
+        print(f"Using voice from store: {selected_voice}", flush=True)
+
+        # Clear any existing languages to prevent accumulation across calls
+        if hasattr(self, '_languages'):
+            self._languages = []
+
+        # Configure voice dynamically
+        self.add_language(
+            name="English",
+            code="en-US",
+            voice=selected_voice
+        )
+        self._languages[-1]["params"] = {"streaming": True}
+
         # Call parent implementation
         return super().on_swml_request(request_data, callback_path, request)
     
@@ -1927,7 +1970,7 @@ def create_server():
     # This is how web clients get authentication tokens for WebRTC calls
     # ─────────────────────────────────────────────────────────────────────────
     @server.app.get("/get_token")
-    def get_token():
+    def get_token(voice: str = "inworld.Elizabeth:inworld-tts-1.5-max"):
         """
         Generate a guest token for the web client.
 
@@ -1939,6 +1982,10 @@ def create_server():
 
         The frontend uses this to initialize the SignalWire client and dial.
         """
+        # Store selected voice in shared file (works across gunicorn workers)
+        set_stored_voice(voice)
+        print(f"Stored voice selection: {voice}", flush=True)
+
         sw_host = get_signalwire_host()
         project = os.getenv("SIGNALWIRE_PROJECT_ID", "")
         token = os.getenv("SIGNALWIRE_TOKEN", "")

@@ -1,4 +1,6 @@
-signalwire-agents>=1.0.15
+signalwire-agents==1.1.0
+starlette>=1.3.1  # patch transitive starlette CVEs (via fastapi)
+idna>=3.15        # patch transitive idna CVE (PYSEC-2026-215)
 gunicorn>=21.0.0
 uvicorn>=0.34.2
 python-dotenv>=1.0.0
