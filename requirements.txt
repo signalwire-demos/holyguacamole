@@ -4,3 +4,8 @@ idna>=3.15        # patch transitive idna CVE (PYSEC-2026-215)
 gunicorn>=21.0.0
 uvicorn>=0.34.2
 python-dotenv>=1.0.0
+# Enables the intended TF-IDF/cosine menu matcher (find_menu_item). Without it
+# the app falls back to a crude fuzzy scorer that cross-matches e.g.
+# "big tacos" -> "Large Drink". numpy is used by the same matching path.
+scikit-learn>=1.4.0
+numpy>=1.26.0

@@ -13,7 +13,15 @@
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <!-- Apply the saved theme before first paint (avoids a flash of Classic). -->
+    <script>
+        try {
+            document.documentElement.setAttribute(
+                'data-theme', localStorage.getItem('guacamoleTheme') || 'classic');
+        } catch (e) {}
+    </script>
     
     <style>
         * {
@@ -111,7 +119,11 @@
         }
 
         .github-link {
-            position: fixed;
+            /* absolute, not fixed: as a fixed element it floated over the page
+               and covered the status card between ~60-160px of scroll, hiding
+               the "Call ended - thank you for choosing Holy Guacamole!" message.
+               It belongs with the header, so let it scroll away. */
+            position: absolute;
             top: 20px;
             right: 20px;
             z-index: 1000;
@@ -212,6 +224,43 @@
             text-align: center;
             width: 100%;
             height: 100%;
+            position: relative;
+            cursor: pointer;   /* the whole art is clickable = Start Ordering */
+        }
+        /* Subtle affordance that the art is clickable. */
+        #video-placeholder:hover .placeholder-fill {
+            filter: brightness(1.05);
+        }
+
+        /* Placeholder art fills the whole video frame (edge to edge). */
+        #video-placeholder .placeholder-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+
+        /* Hint text pinned to the bottom of the frame, on a solid dark pill so
+           it stays legible over the busy artwork instead of blending in. */
+        #video-placeholder .placeholder-hint {
+            position: absolute;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            margin: 0;
+            padding: 9px 20px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            white-space: nowrap;
+            background: rgba(0, 0, 0, 0.72);
+            border-radius: 999px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
         }
 
         /* Style any video element SignalWire injects */
@@ -219,7 +268,7 @@
         #video-container > div > video {
             width: 100% !important;
             height: 100% !important;
-            object-fit: contain !important; /* Contain to maintain aspect ratio */
+            object-fit: cover !important; /* Fill the frame like the placeholder image */
             border-radius: 15px;
             position: absolute;
             top: 0;
@@ -599,6 +648,398 @@
             }
             
         }
+        /* ---------------------------------------------------------------------
+           Muted/subtle text tokens. These replace hardcoded inline greys
+           (#999/#666/#888) that couldn't be restyled per theme and failed
+           contrast (the #999 order placeholder failed even in classic).
+           Each theme overrides these two values; everything below inherits.
+           --------------------------------------------------------------------- */
+        :root {
+            --fg-muted:  #5a5a5a;   /* descriptions, timestamps  (>=4.5:1 on white) */
+            --fg-subtle: #6b6b6b;   /* JSON dumps, de-emphasized */
+        }
+
+        .order-empty {
+            text-align: center;
+            color: var(--fg-muted);
+            padding: 50px;
+        }
+
+        .order-item-row { margin-bottom: 12px; }
+
+        .order-item-desc-line {
+            font-size: 0.85rem;
+            color: var(--fg-muted);
+            padding: 0 10px;
+            margin-top: -5px;
+        }
+
+        .event-time { color: var(--fg-muted); font-size: 0.8rem; }
+        .event-json { color: var(--fg-subtle); margin-left: 10px; font-size: 0.8rem; white-space: pre-wrap; }
+
+        /* Recording/AI disclosure. Deliberately legible rather than fine print -
+           consent obtained via a dark pattern is worth little. */
+        .recording-notice {
+            font-size: 0.82rem;
+            line-height: 1.35;
+            color: var(--fg-muted);
+            background: rgba(193, 39, 45, 0.07);
+            border-left: 3px solid #C1272D;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 12px;
+        }
+        .recording-notice strong { color: inherit; }
+
+        /* Start Ordering glow, in Sigmond's eye colour (#88D8F8 - sampled from
+           the artwork: the robot's eyes sit at H197, very bright cyan).
+           Applies in every theme; the cyan ties the CTA to the character. */
+        #connectBtn {
+            --sigmond-eye: 136, 216, 248;   /* #88D8F8 */
+            box-shadow:
+                0 0 14px rgba(var(--sigmond-eye), 0.55),
+                0 0 34px rgba(var(--sigmond-eye), 0.28);
+            animation: sigmond-pulse 2.6s ease-in-out infinite;
+        }
+
+        #connectBtn:hover:not(:disabled) {
+            box-shadow:
+                0 0 20px rgba(var(--sigmond-eye), 0.85),
+                0 0 48px rgba(var(--sigmond-eye), 0.45);
+            animation: none;   /* hold steady while hovered */
+        }
+
+        /* No glow once it's disabled (connecting / in-call) - the button is
+           inert then and a pulsing CTA would be misleading. */
+        #connectBtn:disabled {
+            box-shadow: none;
+            animation: none;
+        }
+
+        @keyframes sigmond-pulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 12px rgba(var(--sigmond-eye), 0.45),
+                    0 0 28px rgba(var(--sigmond-eye), 0.20);
+            }
+            50% {
+                box-shadow:
+                    0 0 18px rgba(var(--sigmond-eye), 0.75),
+                    0 0 44px rgba(var(--sigmond-eye), 0.38);
+            }
+        }
+
+        /* Respect users who don't want motion. */
+        @media (prefers-reduced-motion: reduce) {
+            #connectBtn { animation: none; }
+        }
+
+        .order-complete { text-align: center; padding: 20px; }
+        .order-complete h2 { color: #2E7D32; }
+        .order-complete-number { font-size: 24px; font-weight: bold; }
+
+        /* =====================================================================
+           THEME: "Fresh" — Material 3 style, seeded on the new artwork palette
+           (avocado green + warm gold/olive + neutral surfaces). Applied when
+           <html data-theme="modern">. Classic theme = no attribute (styles above).
+           ===================================================================== */
+        /* Palette sampled from the artwork: olive/chartreuse guacamole greens
+           (H60–75, e.g. #778533), warm amber-gold accents (#CFAA2A / #F7CF60),
+           warm near-black (#17150D) and silver metal. Built into an M3 scheme. */
+        html[data-theme="modern"] {
+            --md-primary:            #576916;   /* olive-avocado green (from #778533) */
+            --md-on-primary:         #ffffff;
+            --md-primary-container:  #dbf18f;   /* light chartreuse */
+            --md-on-primary-container:#181e00;
+            --md-tertiary:           #6d5e00;   /* amber-gold (from #CFAA2A) */
+            --md-tertiary-container: #f8e187;   /* warm gold (from #F7CF60) */
+            --md-on-tertiary-container:#221b00;
+            --md-error:              #ba1a1a;
+            --md-on-error:           #ffffff;
+            --md-bg:                 #fdfbef;   /* warm cream (image's gold ambiance) */
+            --md-surface:            #fffdf3;
+            --md-surface-container:  #f2f0e1;
+            --md-surface-variant:    #e5e3d1;   /* warm neutral-variant */
+            --md-on-surface:         #1b1c13;   /* warm near-black (from #17150D) */
+            --md-on-surface-variant: #47493a;
+            --md-outline:            #787a67;
+            --md-outline-variant:    #c9c8b3;
+            --md-elev1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
+            --md-elev2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
+            --md-font: "Google Sans", Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+
+        html[data-theme="modern"] body {
+            background: var(--md-bg);
+            color: var(--md-on-surface);
+            font-family: var(--md-font);
+        }
+
+        /* Top app bar — flat surface with a hairline divider, no roof tiles */
+        html[data-theme="modern"] .roof-tiles {
+            background: var(--md-surface);
+            box-shadow: var(--md-elev1);
+            border-bottom: 1px solid var(--md-outline-variant);
+        }
+        html[data-theme="modern"] .roof-tiles::before,
+        html[data-theme="modern"] .roof-tiles::after { content: none; }
+        html[data-theme="modern"] .roof-title { text-shadow: none; }
+        html[data-theme="modern"] .roof-title h1 { color: var(--md-on-surface); font-weight: 500; }
+        html[data-theme="modern"] .roof-title p  { color: var(--md-on-surface-variant); }
+
+        /* Cards — rounded, soft elevation, no gold underline */
+        html[data-theme="modern"] .card {
+            background: var(--md-surface);
+            border: 1px solid var(--md-outline-variant);
+            border-radius: 20px;
+            box-shadow: var(--md-elev1);
+        }
+        html[data-theme="modern"] .card-title {
+            color: var(--md-on-surface);
+            font-weight: 500;
+            border-bottom: 1px solid var(--md-outline-variant);
+        }
+
+        /* Buttons — filled pill, Material state layer (no lift transform) */
+        html[data-theme="modern"] button {
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            border-radius: 999px;
+            font-weight: 500;
+            letter-spacing: .1px;
+            box-shadow: none;
+            transition: box-shadow .2s, background .2s, filter .2s;
+        }
+        html[data-theme="modern"] button:hover {
+            background: var(--md-primary);
+            filter: brightness(1.08);
+            box-shadow: var(--md-elev1);
+            transform: none;
+        }
+        html[data-theme="modern"] button:disabled {
+            background: rgba(27,28,22,.12);
+            color: rgba(27,28,22,.38);
+            box-shadow: none;
+        }
+        html[data-theme="modern"] button.danger { background: var(--md-error); color: var(--md-on-error); }
+        html[data-theme="modern"] button.danger:hover { background: var(--md-error); filter: brightness(1.08); }
+
+        /* Video frame */
+        html[data-theme="modern"] #video-container {
+            background: var(--md-surface-container);
+            border: 1px solid var(--md-outline-variant);
+            box-shadow: var(--md-elev1);
+        }
+
+        /* Status chips — tonal */
+        html[data-theme="modern"] .status-greeting  { background: var(--md-primary-container);  color: var(--md-on-primary-container); }
+        html[data-theme="modern"] .status-ordering   { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
+        html[data-theme="modern"] .status-confirming { background: var(--md-surface-variant);    color: var(--md-on-surface); }
+        html[data-theme="modern"] .status-payment    { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
+
+        /* Order list */
+        html[data-theme="modern"] .order-item { background: var(--md-surface-container); }
+        html[data-theme="modern"] .order-item-name  { color: var(--md-on-surface); }
+        html[data-theme="modern"] .order-item-price { color: var(--md-primary); }
+        html[data-theme="modern"] .order-totals { border-top: 1px solid var(--md-outline-variant); }
+        html[data-theme="modern"] .total-line.final {
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
+        }
+        html[data-theme="modern"] .order-number-display {
+            background: var(--md-tertiary-container);
+            color: var(--md-on-tertiary-container);
+        }
+
+        /* Menu */
+        html[data-theme="modern"] .menu-category { background: var(--md-surface-container); }
+        html[data-theme="modern"] .menu-category-title { color: var(--md-primary); border-bottom: 1px solid var(--md-outline-variant); }
+        html[data-theme="modern"] .menu-item { background: var(--md-surface); border: 1px solid var(--md-outline-variant); }
+        html[data-theme="modern"] .menu-item:hover { border-color: var(--md-primary); background: var(--md-primary-container); }
+        html[data-theme="modern"] .menu-item-name  { color: var(--md-on-surface); }
+        html[data-theme="modern"] .menu-item-desc  { color: var(--md-on-surface-variant); }
+        html[data-theme="modern"] .menu-item-price { color: var(--md-primary); }
+
+        /* Selects (voice + theme) */
+        html[data-theme="modern"] select {
+            border: 1px solid var(--md-outline) !important;
+            background: var(--md-surface);
+            color: var(--md-on-surface);
+        }
+
+        /* GitHub chip + result toast */
+        html[data-theme="modern"] .github-link { background: var(--md-surface); color: var(--md-on-surface); box-shadow: var(--md-elev1); }
+        html[data-theme="modern"] .github-link svg { fill: var(--md-on-surface); }
+        html[data-theme="modern"] #result-message { background: var(--md-primary); color: var(--md-on-primary); }
+        html[data-theme="modern"] #event-log { background: var(--md-surface-container); }
+        html[data-theme="modern"] {
+            --fg-muted:  #47493a;   /* = --md-on-surface-variant */
+            --fg-subtle: #5a5c4c;
+        }
+        html[data-theme="modern"] .order-complete h2 { color: var(--md-primary); }
+        html[data-theme="modern"] .recording-notice {
+            background: var(--md-surface-container);
+            border-left-color: var(--md-error);
+        }
+        html[data-theme="modern"] .event-entry { border-left-color: var(--md-outline-variant); }
+        html[data-theme="modern"] .event-entry.user-event {
+            background: var(--md-primary-container);
+            border-color: var(--md-primary);
+            color: var(--md-on-primary-container);
+        }
+
+        /* =====================================================================
+           THEME: "SignalWire" — official brand palette from the SignalWire
+           design system (DTCG tokens). Dark surfaces, blue fills, turquoise
+           emphasis text, purple→fuchsia gradient accents. Brand rules honored:
+           blue (#044EF4) = fills only (never text on dark); turquoise = emphasis
+           text; fuchsia/purple = fills & gradients; gold = warnings.
+           ===================================================================== */
+        html[data-theme="signalwire"] {
+            --sw-blue:       #044EF4;
+            --sw-fuchsia:    #F72A72;
+            --sw-turquoise:  #40E0D0;
+            --sw-gold:       #FFD700;
+            --sw-purple:     #601BE6;
+            --sw-page:       #0e0e18;
+            --sw-surface:    #181a28;
+            --sw-raised:     #222436;
+            --sw-fg:         #f0f0f4;
+            --sw-fg-muted:   #a0a0aa;
+            --sw-fg-subtle:  #73737e;
+            --sw-hairline:   rgba(255,255,255,.09);
+            --sw-grad:       linear-gradient(90deg, #044EF4 0%, #601BE6 50%, #F72A72 100%);
+            --sw-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+
+        html[data-theme="signalwire"] body {
+            background: var(--sw-page);
+            color: var(--sw-fg);
+            font-family: var(--sw-font);
+        }
+
+        /* Top app bar — dark surface with the brand gradient as the base rule */
+        html[data-theme="signalwire"] .roof-tiles {
+            background: var(--sw-surface);
+            box-shadow: none;
+            border-bottom: 1px solid var(--sw-hairline);
+        }
+        html[data-theme="signalwire"] .roof-tiles::before { content: none; }
+        html[data-theme="signalwire"] .roof-tiles::after {
+            content: '';
+            height: 3px;
+            background: var(--sw-grad);
+            opacity: 1;
+        }
+        html[data-theme="signalwire"] .roof-title { text-shadow: none; }
+        html[data-theme="signalwire"] .roof-title h1 { color: var(--sw-fg); font-weight: 600; }
+        html[data-theme="signalwire"] .roof-title p  { color: var(--sw-fg-muted); }
+
+        /* Cards — dark surface, hairline border, turquoise section titles */
+        html[data-theme="signalwire"] .card {
+            background: var(--sw-surface);
+            border: 1px solid var(--sw-hairline);
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.35);
+        }
+        html[data-theme="signalwire"] .card-title {
+            color: var(--sw-turquoise);
+            font-weight: 600;
+            border-bottom: 1px solid var(--sw-hairline);
+        }
+
+        /* Buttons — brand blue fill (fills-only rule), fuchsia for danger */
+        html[data-theme="signalwire"] button {
+            background: var(--sw-blue);
+            color: #fff;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: none;
+            transition: filter .2s, box-shadow .2s, transform .2s;
+        }
+        html[data-theme="signalwire"] button:hover {
+            background: var(--sw-blue);
+            filter: brightness(1.12);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(4,78,244,.45);
+        }
+        html[data-theme="signalwire"] button:disabled {
+            background: #2a2c3d;
+            color: var(--sw-fg-subtle);
+            box-shadow: none;
+            transform: none;
+        }
+        html[data-theme="signalwire"] button.danger { background: var(--sw-fuchsia); }
+        html[data-theme="signalwire"] button.danger:hover { background: var(--sw-fuchsia); filter: brightness(1.1); box-shadow: 0 6px 18px rgba(247,42,114,.45); }
+
+        /* Video frame */
+        html[data-theme="signalwire"] #video-container {
+            background: var(--sw-raised);
+            border: 1px solid var(--sw-hairline);
+            box-shadow: 0 8px 24px rgba(0,0,0,.35);
+        }
+
+        /* Status chips — tonal brand tints, emphasis text */
+        html[data-theme="signalwire"] .status-greeting  { background: rgba(64,224,208,.14); color: var(--sw-turquoise); }
+        html[data-theme="signalwire"] .status-ordering   { background: rgba(96,27,230,.20);  color: #c8b4ff; }
+        html[data-theme="signalwire"] .status-confirming { background: rgba(4,78,244,.20);   color: #8fb0ff; }
+        html[data-theme="signalwire"] .status-payment    { background: rgba(255,215,0,.14);  color: var(--sw-gold); }
+
+        /* Order list */
+        html[data-theme="signalwire"] .order-item { background: var(--sw-raised); }
+        html[data-theme="signalwire"] .order-item-name  { color: var(--sw-fg); }
+        html[data-theme="signalwire"] .order-item-price { color: var(--sw-turquoise); }
+        html[data-theme="signalwire"] .order-totals { border-top: 1px solid var(--sw-hairline); }
+        html[data-theme="signalwire"] .total-line.final { background: rgba(4,78,244,.16); color: var(--sw-turquoise); }
+        html[data-theme="signalwire"] .order-number-display { background: var(--sw-grad); color: #fff; }
+
+        /* Menu */
+        html[data-theme="signalwire"] .menu-category { background: var(--sw-raised); }
+        html[data-theme="signalwire"] .menu-category-title { color: var(--sw-turquoise); border-bottom: 1px solid var(--sw-hairline); }
+        html[data-theme="signalwire"] .menu-item { background: var(--sw-surface); border: 1px solid var(--sw-hairline); }
+        html[data-theme="signalwire"] .menu-item:hover { border-color: var(--sw-blue); background: rgba(4,78,244,.12); transform: translateX(3px); }
+        html[data-theme="signalwire"] .menu-item-name  { color: var(--sw-fg); }
+        html[data-theme="signalwire"] .menu-item-desc  { color: var(--sw-fg-muted); }
+        html[data-theme="signalwire"] .menu-item-price { color: var(--sw-turquoise); }
+
+        /* Selects, github chip, toast, log */
+        html[data-theme="signalwire"] select {
+            border: 1px solid rgba(255,255,255,.24) !important;
+            background: var(--sw-raised);
+            color: var(--sw-fg);
+        }
+        html[data-theme="signalwire"] .github-link { background: var(--sw-raised); color: var(--sw-fg); box-shadow: none; border: 1px solid var(--sw-hairline); }
+        html[data-theme="signalwire"] .github-link svg { fill: var(--sw-fg); }
+        html[data-theme="signalwire"] #result-message { background: var(--sw-grad); color: #fff; }
+        html[data-theme="signalwire"] #event-log { background: var(--sw-raised); }
+
+        /* Dark-theme text tokens + event log. The base .user-event pill is a
+           light green with no override, which put near-white text on pale green
+           (~1.06:1) - every order event was invisible in this theme. */
+        html[data-theme="signalwire"] {
+            --fg-muted:  #a0a0aa;   /* = --sw-fg-muted */
+            --fg-subtle: #8f8f9a;
+        }
+        html[data-theme="signalwire"] .order-complete h2 { color: var(--sw-turquoise); }
+        html[data-theme="signalwire"] .recording-notice {
+            background: rgba(247, 42, 114, .10);
+            border-left-color: var(--sw-fuchsia);
+            color: var(--sw-fg-muted);
+        }
+        html[data-theme="signalwire"] .event-entry { border-left-color: var(--sw-hairline); }
+        html[data-theme="signalwire"] .event-entry.user-event {
+            background: rgba(64, 224, 208, .12);
+            border-color: var(--sw-turquoise);
+            color: var(--sw-fg);
+        }
+        /* Native option popups inherit the light `color` from the dark select on
+           some platforms; pin both so the list stays readable. */
+        html[data-theme="signalwire"] select option,
+        html[data-theme="signalwire"] select optgroup {
+            background: var(--sw-raised);
+            color: var(--sw-fg);
+        }
+
     </style>
 </head>
 <body>
@@ -621,9 +1062,10 @@
             <!-- Video/Avatar Section -->
             <div id="video-container">
                 <!-- app.js attaches the remote (avatar) stream to a video element here -->
-                <div id="video-placeholder">
-                    <img src="/logo.png" alt="Holy Guacamole Logo" style="max-width: 200px;">
-                    <p style="color: #568203; margin-top: 20px; font-size: 1.1rem;">Click "Start Ordering" to begin</p>
+                <div id="video-placeholder" role="button" tabindex="0"
+                     aria-label="Start ordering">
+                    <img src="/placeholder.png" alt="" class="placeholder-fill">
+                    <p class="placeholder-hint">Tap anywhere to start ordering</p>
                 </div>
             </div>
 
@@ -646,7 +1088,7 @@
             <div class="card" id="order-display">
                 <div class="card-title">Your Order</div>
                 <div id="order-items">
-                    <div style="text-align: center; color: #999; padding: 50px;">
+                    <div class="order-empty">
                         Your order will appear here
                     </div>
                 </div>
@@ -674,6 +1116,13 @@
             <!-- Controls Section -->
             <div class="card" id="controls-card">
                 <div class="card-title">Controls</div>
+                <!-- Recording disclosure. Must appear BEFORE the action: the
+                     mic permission prompt is consent to be heard, not consent to
+                     be recorded, so the informed click is what carries consent. -->
+                <p class="recording-notice" id="recording-notice">
+                    🔴 This demo uses an AI agent and <strong>records the audio</strong> of your
+                    call. By starting, you consent to being recorded.
+                </p>
                 <div class="controls">
                     <button id="connectBtn">🎤 Start Ordering</button>
                     <button id="hangupBtn" style="display:none;" class="danger">📞 End Call</button>
@@ -695,6 +1144,16 @@
                         </select>
                     </label>
                 </div>
+                <div style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <span>🎨 Theme:</span>
+                        <select id="themeSelect" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #568203; font-size: 0.9rem; cursor: pointer;">
+                            <option value="classic">Classic</option>
+                            <option value="modern">Fresh</option>
+                            <option value="signalwire">SignalWire</option>
+                        </select>
+                    </label>
+                </div>
             </div>
 
             <!-- Event Log -->
@@ -713,6 +1172,6 @@
     <!-- SignalWire Browser SDK v4 from CDN -->
     <script src="https://cdn.signalwire.com/@signalwire/js@4.0.0-rc.0"></script>
     <!-- App Logic -->
-    <script src="/app.js?v=4"></script>
+    <script src="/app.js?v=9"></script>
 </body>
 </html>
