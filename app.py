@@ -6,13 +6,19 @@ Web UI and SWML served on the same port
 
 import random
 import os
+import hashlib
+import json
+import re
+from decimal import Decimal, ROUND_HALF_UP
+
+_CENT = Decimal("0.01")   # money quantum for order math
 import time
 import logging
 import threading
 import warnings
 from pathlib import Path
 from dotenv import load_dotenv
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from signalwire import AgentBase, AgentServer
 from signalwire.core.function_result import SwaigFunctionResult
 from signalwire.rest import RestClient
@@ -37,12 +43,138 @@ swml_handler_info = {
     "address": None       # The SIP address clients dial to reach the agent
 }
 
+# Voice store file path (shared between workers)
+VOICE_STORE_FILE = "/tmp/guacamole_voice.txt"
+
+DEFAULT_VOICE = "elevenlabs.adam"
+
+# Allowlist of selectable voices, loaded from the same JSON files the web UI
+# offers. Used to reject a bogus/stale ?voice= before it reaches the SWML doc.
+_VOICE_FILES = ("inworld_voices.json", "elevenlabs_voices.json",
+                "smallest_voices.json", "fish_voices.json")
+_known_voices = set()
+for _vf in _VOICE_FILES:
+    try:
+        with open(Path(__file__).parent / "web" / _vf) as _fh:
+            _known_voices.update(
+                v["voiceId"] for v in json.load(_fh) if isinstance(v, dict) and v.get("voiceId"))
+    except Exception as _e:      # a missing vendor file just shrinks the allowlist
+        logging.getLogger(__name__).warning("Could not load %s: %s", _vf, _e)
+_known_voices.add(DEFAULT_VOICE)
+
+
+def is_known_voice(voice):
+    """True if `voice` is one of the voices the UI actually offers."""
+    return bool(voice) and voice in _known_voices
+
+
+def singular_forms(s):
+    """Candidate singular spellings of `s` (menu aliases are singular, callers
+    speak plurals: "two waters", "three sodas", "remove the bottles")."""
+    s = (s or "").lower().strip()
+    forms = {s}
+    if s.endswith("ies") and len(s) > 4:
+        forms.add(s[:-3] + "y")
+    if s.endswith("es") and len(s) > 3:
+        forms.add(s[:-2])
+    if s.endswith("s") and not s.endswith("ss"):
+        forms.add(s[:-1])
+    return forms
+
+
+# Per-call voice selection: guest_id -> (voice, ts). /get_token records the
+# caller's pick against the guest identity of the token it just minted
+# (address_uri = "/guest/guest-<uuid>"), and the SWML request for that call
+# arrives from "sip:guest-<uuid>@...". Keying on that makes the voice per-call
+# instead of a single shared file that a second caller could overwrite
+# mid-order.
+_voice_by_guest = {}
+_GUEST_VOICE_TTL = 2 * 3600
+_GUEST_RE = re.compile(r"guest-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.I)
+
+
+def _guest_id_from_request(request_data):
+    """Pull the guest id out of an SWML request (caller id / address / anywhere).
+
+    The field name isn't guaranteed across call shapes, so match the well-formed
+    guest-<uuid> pattern anywhere in the payload rather than guessing a key.
+    """
+    if not request_data:
+        return None
+    try:
+        m = _GUEST_RE.search(json.dumps(request_data))
+        return m.group(0).lower() if m else None
+    except Exception:
+        return None
+
+
+def set_voice_for_guest(guest_id, voice):
+    """Remember this caller's voice pick for the call they're about to place."""
+    if not guest_id or not voice:
+        return
+    now = time.time()
+    _voice_by_guest[guest_id.lower()] = (voice, now)
+    for gid in [g for g, (_v, ts) in _voice_by_guest.items()
+                if now - ts > _GUEST_VOICE_TTL]:
+        _voice_by_guest.pop(gid, None)
+
+
+def get_voice_for_guest(guest_id):
+    entry = _voice_by_guest.get((guest_id or "").lower())
+    return entry[0] if entry else None
+
+
+def get_stored_voice():
+    """Get voice from shared file store."""
+    try:
+        with open(VOICE_STORE_FILE, 'r') as f:
+            return f.read().strip()
+    except Exception as e:
+        # Bare `except:` also swallowed permission errors silently.
+        logging.getLogger(__name__).debug("No stored voice (%s)", e)
+        return None
+
+def set_stored_voice(voice):
+    """Set voice in shared file store."""
+    with open(VOICE_STORE_FILE, 'w') as f:
+        f.write(voice)
+
 # Why registration hasn't happened yet (surfaced by /get_token so a
 # misconfiguration shows up in the browser, not just the server log)
 swml_setup_error = None
 
 # Guards the lazy setup retry from /get_token
 swml_setup_lock = threading.Lock()
+
+# Serializes order-mutating SWAIG handlers and de-dupes the model's rapid
+# duplicate tool-calls (e.g. add_item fired twice in ~1s for one utterance),
+# which otherwise processed concurrently and corrupted the webhook response
+# (SignalWire "webhook_fail" / parse_error). Keyed by call_id+signature within
+# a short window so a real "two tacos" (single qty=2 call) is never affected.
+swaig_mutation_lock = threading.Lock()
+_recent_swaig_calls = {}          # call_id -> {"sig":…, "ts":…, "response":…}
+_SWAIG_DEDUP_WINDOW = 2.0         # seconds; shorter than any human re-order
+
+# Authoritative per-call order state: call_id -> {"state": {...}, "ts": epoch}.
+# The platform's echoed global_data is a per-TURN snapshot, so two mutating tool
+# calls in the same turn both read it and the second's set_global_data clobbers
+# the first (see get_order_state). Holding the order here makes them compose.
+# Single worker (see Dockerfile) keeps this authoritative.
+_call_order_states = {}
+_ORDER_STATE_TTL = 4 * 3600       # drop states from calls that ended long ago
+
+
+def _prune_order_states(max_entries=1000):
+    """Drop stale per-call order states (calls that ended without cleanup)."""
+    now = time.time()
+    for cid in [c for c, v in _call_order_states.items()
+                if now - v.get("ts", 0) > _ORDER_STATE_TTL]:
+        _call_order_states.pop(cid, None)
+    # Hard cap as a backstop: evict the oldest if something goes wrong.
+    if len(_call_order_states) > max_entries:
+        for cid, _ in sorted(_call_order_states.items(),
+                             key=lambda kv: kv[1].get("ts", 0))[:len(_call_order_states) - max_entries]:
+            _call_order_states.pop(cid, None)
 
 # Import for TF-IDF vector matching
 try:
@@ -52,7 +184,15 @@ try:
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
-    print("Warning: scikit-learn not installed. Falling back to fuzzy matching.")
+    # Loud, not a passing note: without sklearn the app silently degrades to a
+    # crude fuzzy scorer that mis-resolves items (it matched "big tacos" ->
+    # "Large Drink" in production). scikit-learn is pinned in requirements.txt,
+    # so reaching this branch means the image is built wrong.
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger(__name__).error(
+        "scikit-learn is MISSING - menu matching is falling back to the fuzzy "
+        "scorer, which mis-resolves items. Rebuild the image with requirements.txt.")
+    print("ERROR: scikit-learn not installed. Menu matching will be inaccurate.")
 
 # Phase 1: Simple menu structure with descriptions
 MENU = {
@@ -336,7 +476,33 @@ class HolyGuacamoleAgent(AgentBase):
             route="/swml",  # SWML endpoint path
             record_call=True
         )
-        
+
+        # Set AI model + barge behavior. transparent_barge defaults to true
+        # in the engine (AI waits for the user to finish before responding
+        # when they talk over the agent); set it explicitly so the intent is
+        # documented in the rendered SWML rather than relying on the default.
+        self.set_params({
+            "ai_model": "gpt-4.1-mini",
+            "transparent_barge": True,
+            # Recording + AI disclosure, spoken VERBATIM by the platform rather
+            # than by the LLM. A compliance notice must not depend on the model
+            # choosing to say it (it demonstrably skips prompt instructions).
+            # The call is recorded (record_call) and several US states require
+            # all-party consent, so the caller hears this before saying anything
+            # and can hang up. no_barge stops them talking over it.
+            "static_greeting": (
+                # Drive-thru-natural phrasing: the disclosure lands as a casual
+                # aside rather than legalese, but still names the bot and says
+                # "A I" plainly (the compliance bit - a caller must understand
+                # they're talking to a machine, not a person).
+                # "A I" stays spaced so TTS reads the letters, not "ay".
+                "Welcome to Holy Guacamole! I'm Sigmond, the A I behind the mic "
+                "- and yes, this call's recorded. Combo meals save you money, "
+                "by the way. What can I get started for you?"
+            ),
+            "static_greeting_no_barge": True,
+        })
+
         # Initialize TF-IDF vectorizer if available
         self.vectorizer = None
         self.menu_vectors = None
@@ -369,9 +535,19 @@ class HolyGuacamoleAgent(AgentBase):
         default_context.add_step("greeting") \
             .add_section("Current Task", "Welcome the customer and start their order") \
             .add_bullets("Process", [
-                "Welcome them warmly to Holy Guacamole!",
+                # The greeting (including the recording + AI disclosure) is
+                # played automatically as a static_greeting - see set_params.
+                # Do not restate it; just take the order.
+                "The welcome and the recording/AI disclosure have ALREADY been "
+                "played automatically. Do NOT greet again or repeat them.",
+                "If the caller asks about recording, confirm plainly that the "
+                "call is recorded and that they're speaking with Sigmond, an AI order taker.",
                 "Ask what they'd like to order",
-                "Mention combo meals save money",
+                # The combo-saves-money line is part of the scripted greeting now
+                # (it used to be woven into the model's improvised welcome), so
+                # don't repeat it straight away - just bring it up if it fits later.
+                "The greeting already said combo meals save money - don't repeat "
+                "it immediately, but you can mention combos again if it's relevant",
                 "Listen for ALL items they mention",
                 "If they order multiple items (e.g. 'two tacos and a drink'), call add_item for EACH item separately"
             ]) \
@@ -388,8 +564,10 @@ class HolyGuacamoleAgent(AgentBase):
                 "🔴 HIGHEST PRIORITY - Check for RESTART patterns FIRST:",
                 "  - 'I only want X', 'never mind just X', 'actually just X' = cancel_order() THEN add_item(X)",
                 "  - 'cancel', 'start over', 'never mind' = cancel_order()",
-                "When customer orders multiple items (e.g. 'two tacos and a drink'): CALL add_item FOR EACH ITEM SEPARATELY",
+                "When customer orders multiple DIFFERENT items (e.g. 'a taco and a drink'): CALL add_item FOR EACH ITEM SEPARATELY",
                 "CRITICAL: If customer says 'X and Y', you MUST call add_item twice - once for X and once for Y",
+                "🔢 QUANTITY: If the customer orders MORE THAN ONE of the SAME item (e.g. 'two beef tacos', 'three waters', 'a couple burritos'), call add_item ONCE and PASS the quantity: add_item(item_name='beef taco', quantity=2). NEVER default the quantity to 1 when a number was said.",
+                "  - 'two/three/four ...' or 'a couple/a few ...' = set quantity to that number (a couple = 2, a few = 3)",
                 "⚠️ CRITICAL PATTERN - Customer wants to RESTART with only one item:",
                 "  - TRIGGERS: 'never mind, I just want X', 'I only want X', 'forget everything, just X'",
                 "  - Also: 'actually just give me X', 'you know what, just X', 'scratch that, only X'",
@@ -432,7 +610,7 @@ class HolyGuacamoleAgent(AgentBase):
                 "Only mention the total price, not individual items"
             ]) \
             .set_step_criteria("Order is confirmed as correct") \
-            .set_functions(["process_payment", "add_item", "remove_item", "cancel_order"]) \
+            .set_functions(["process_payment", "add_item", "remove_item", "upgrade_to_combo", "cancel_order"]) \
             .set_valid_steps(["payment_processing", "taking_order"])
         
         # PAYMENT PROCESSING STATE
@@ -462,9 +640,29 @@ class HolyGuacamoleAgent(AgentBase):
         
         # Helper functions
         def get_order_state(raw_data):
-            """Get current order state"""
-            global_data = raw_data.get('global_data', {})
-            
+            """Get the authoritative order state for this call.
+
+            The platform echoes `global_data` into every SWAIG request, but that
+            snapshot is captured per TURN: if the model calls two mutating tools
+            in one turn (which the prompt explicitly asks for - "a taco and a
+            drink" -> two add_item calls), both requests carry the SAME snapshot
+            and each returns its own set_global_data, so the second silently
+            clobbers the first. The backend would end up with only the drink
+            while the UI - driven by per-call events - showed both.
+
+            So we keep the order in-process, keyed by call_id, and hand back the
+            SAME dict object every time. Handlers mutate it in place, so
+            successive tools in one turn compose instead of overwriting.
+            global_data is still mirrored (see save_order_state) because the
+            prompt interpolates ${global_data.order_state.*}.
+            """
+            # `or {}` (not a get-default): a present-but-null global_data /
+            # order_state would otherwise blow up on .get() and the handler's
+            # state change would be silently lost.
+            raw_data = raw_data or {}
+            global_data = raw_data.get('global_data') or {}
+            call_id = raw_data.get('call_id')
+
             default = {
                 "items": [],  # List of {sku, name, quantity, price, total}
                 "total": 0.00,
@@ -473,20 +671,96 @@ class HolyGuacamoleAgent(AgentBase):
                 "order_number": None,
                 "item_count": 0
             }
-            
-            return global_data.get('order_state', default), global_data
-        
+
+            # Live state for this call wins - it reflects every tool call so far,
+            # including ones from the same turn whose set_global_data hasn't been
+            # echoed back yet.
+            if call_id:
+                cached = _call_order_states.get(call_id)
+                if cached is not None:
+                    cached["ts"] = time.time()
+                    return cached["state"], global_data
+
+            # First touch of this call (or a restart mid-call): seed from the
+            # platform snapshot, merged over the defaults so a partial/legacy
+            # order_state heals instead of raising KeyError downstream.
+            stored = global_data.get('order_state') or {}
+            order_state = {**default, **stored}
+            if not isinstance(order_state.get("items"), list):
+                order_state["items"] = []
+
+            # The wire form is compact (sku+quantity only - see
+            # save_order_state), so rebuild name/price/description/total from
+            # MENU. Items whose SKU no longer exists are dropped rather than
+            # left half-formed.
+            hydrated = []
+            for it in order_state["items"]:
+                if not isinstance(it, dict) or not it.get("sku"):
+                    continue
+                if it.get("name") and it.get("price") is not None:
+                    hydrated.append(it)          # already full (in-process copy)
+                    continue
+                menu_item = next((d for _c, items in MENU.items()
+                                  for s, d in items.items() if s == it["sku"]), None)
+                if not menu_item:
+                    continue
+                qty = int(it.get("quantity", 1) or 1)
+                hydrated.append({
+                    "sku": it["sku"],
+                    "name": menu_item["name"],
+                    "description": menu_item.get("description", ""),
+                    "price": menu_item["price"],
+                    "quantity": qty,
+                    "total": round(menu_item["price"] * qty, 2),
+                })
+            order_state["items"] = hydrated
+
+            if call_id:
+                _prune_order_states()
+                _call_order_states[call_id] = {"state": order_state, "ts": time.time()}
+            return order_state, global_data
+
         def save_order_state(result, order_state, global_data):
-            """Save order state and send to frontend"""
-            global_data['order_state'] = order_state
+            """Mirror a COMPACT order state back to global_data.
+
+            Size matters: SWAIG responses over ~1360 bytes come back as
+            webhook_fail/parse_error (observed twice, both spliced at exactly
+            byte 1360). Echoing the full item list - names, prices, per-item
+            totals and 60-char descriptions - made the response grow with the
+            order and blow that budget at 3-4 items.
+
+            The prompt only interpolates ${global_data.order_state.item_count},
+            .total and .order_number, and the authoritative copy now lives
+            in-process (see get_order_state). So the wire carries just those
+            scalars plus sku+quantity per item, which is enough to rebuild the
+            whole order from MENU after a restart. ~90 bytes instead of ~590.
+            """
+            compact = {
+                "items": [{"sku": i["sku"], "quantity": i["quantity"]}
+                          for i in order_state.get("items", [])],
+                "total": order_state.get("total", 0.0),
+                "subtotal": order_state.get("subtotal", 0.0),
+                "tax": order_state.get("tax", 0.0),
+                "order_number": order_state.get("order_number"),
+                "item_count": order_state.get("item_count", 0),
+            }
+            global_data['order_state'] = compact
+            # Don't echo the platform's own caller id back (119 bytes of pure
+            # overhead); it re-sends it on every request anyway.
+            global_data.pop("caller_id_number", None)
+            global_data.pop("caller_id_name", None)
             result.update_global_data(global_data)
             return result
         
         def calculate_totals(items):
             """Calculate order totals with tax"""
-            subtotal = round(sum(item["total"] for item in items), 2)
-            tax = round(subtotal * 0.10, 2)  # 10% tax
-            total = round(subtotal + tax, 2)
+            # Decimal + ROUND_HALF_UP: float round() is round-half-even and
+            # gave e.g. subtotal 9.95 -> tax 0.99 where a register says 1.00.
+            _sub = Decimal(str(sum(item["total"] for item in items))).quantize(_CENT, rounding=ROUND_HALF_UP)
+            _tax = (_sub * Decimal("0.10")).quantize(_CENT, rounding=ROUND_HALF_UP)  # 10% tax
+            subtotal = float(_sub)
+            tax = float(_tax)
+            total = float((_sub + _tax).quantize(_CENT, rounding=ROUND_HALF_UP))
             return subtotal, tax, total
         
         def order_number_to_words(number):
@@ -496,15 +770,19 @@ class HolyGuacamoleAgent(AgentBase):
                 '5': 'five', '6': 'six', '7': 'seven', '8': 'eight', '9': 'nine'
             }
             
-            # Convert number to string and spell out each digit
-            digits = str(number)
-            spoken_digits = [digit_words[d] for d in digits]
+            # Convert number to string and spell out each digit. Skip anything
+            # that isn't a digit: str(None) -> "None" used to raise KeyError('N')
+            # and take the whole handler down with it.
+            digits = str(number if number is not None else "")
+            spoken_digits = [digit_words[d] for d in digits if d in digit_words]
             return ' '.join(spoken_digits)
         
         def dollars_to_words(amount):
             """Convert dollar amount to spoken English"""
-            # Handle zero
-            if amount == 0:
+            # Handle zero / negative. A negative used to fall through and be
+            # spoken as "zero dollars", so a value-destroying combo could be
+            # announced as a saving.
+            if amount is None or amount <= 0:
                 return "zero dollars"
             
             # Split into dollars and cents
@@ -597,15 +875,32 @@ class HolyGuacamoleAgent(AgentBase):
             # Check both combo opportunities and suggest the best one
             suggestions = []
             
+            # Prices of the ACTUAL items in this order, cheapest-first, so the
+            # quoted savings are real. Hardcoding 3.49/8.99 overstated it for
+            # Bean Taco ($2.99) / Bean & Cheese Burrito ($6.99) - the burrito
+            # case could even claim a saving on an upgrade that costs MORE.
+            def _unit_prices(pred):
+                prices = []
+                for it in items:
+                    n = it["name"].lower()
+                    if pred(n) and "combo" not in n:
+                        prices.extend([it["price"]] * int(it.get("quantity", 0)))
+                return sorted(prices)
+
+            taco_prices = _unit_prices(lambda n: "taco" in n)
+            burrito_prices = _unit_prices(lambda n: "burrito" in n)
+            chips_prices = _unit_prices(lambda n: "chips" in n and "salsa" in n)
+            drink_prices = _unit_prices(lambda n: "small" in n and "drink" in n)
+            taco_combo_price = MENU["combos"]["C001"]["price"]
+            burrito_combo_price = MENU["combos"]["C002"]["price"]
+
             # Check for taco combo (2 tacos + 1 chips + 1 drink) - only if we don't already have taco combos
             if taco_combo_count == 0 and taco_count >= 2 and chips_count >= 1 and drink_count >= 1:
-                taco_price = 3.49 * 2
-                chips_price = 2.99
-                drink_price = 1.99
-                current_total = taco_price + chips_price + drink_price  # $11.96
-                combo_price = 9.99
-                savings = round(current_total - combo_price, 2)  # $1.97
-                suggestions.append(("taco", savings, f"💡 Great news! I can upgrade your 2 tacos, chips & salsa, and drink to a Taco Combo and save you {dollars_to_words(savings)}!"))
+                current_total = sum(taco_prices[:2]) + chips_prices[0] + drink_prices[0]
+                savings = round(current_total - taco_combo_price, 2)
+                # Never pitch an "upgrade" that doesn't actually save money.
+                if savings > 0:
+                    suggestions.append(("taco", savings, f"💡 Great news! I can upgrade your 2 tacos, chips & salsa, and drink to a Taco Combo and save you {dollars_to_words(savings)}!"))
             
             # Check for burrito combo (1 burrito + 1 chips + 1 drink) - only if we don't already have burrito combos
             # Check if we have ADDITIONAL items for burrito combo beyond taco combo suggestion
@@ -614,13 +909,13 @@ class HolyGuacamoleAgent(AgentBase):
             min_drinks_for_burrito = 2 if (taco_count >= 2 and len(suggestions) > 0) else 1
             
             if burrito_combo_count == 0 and burrito_count >= 1 and chips_count >= min_chips_for_burrito and drink_count >= min_drinks_for_burrito:
-                burrito_price = 8.99
-                chips_price = 2.99
-                drink_price = 1.99
-                current_total = burrito_price + chips_price + drink_price  # $13.97
-                combo_price = 12.99
-                savings = round(current_total - combo_price, 2)  # $0.98
-                suggestions.append(("burrito", savings, f"💡 Great news! I can upgrade your burrito, chips & salsa, and drink to a Burrito Combo and save you {dollars_to_words(savings)}!"))
+                # Use the chips/drink not already claimed by the taco suggestion.
+                _c = chips_prices[min_chips_for_burrito - 1]
+                _d = drink_prices[min_drinks_for_burrito - 1]
+                current_total = burrito_prices[0] + _c + _d
+                savings = round(current_total - burrito_combo_price, 2)
+                if savings > 0:
+                    suggestions.append(("burrito", savings, f"💡 Great news! I can upgrade your burrito, chips & salsa, and drink to a Burrito Combo and save you {dollars_to_words(savings)}!"))
             
             # If we have multiple combo opportunities, suggest both!
             if len(suggestions) == 2:
@@ -643,10 +938,14 @@ class HolyGuacamoleAgent(AgentBase):
                         print(f"[DEBUG] Exact match found: {item_data['name']} (SKU: {sku})")
                         return sku, item_data, category
             
-            # Check aliases for exact match
+            # Check aliases for exact match. Compare a de-pluralized form too:
+            # aliases are singular ("water", "soda", "coke"), so "two waters" /
+            # "make it three sodas" used to fall through to TF-IDF, score below
+            # threshold and come back as "not on our menu".
+            item_forms = singular_forms(item_lower)
             for sku, aliases in MENU_ALIASES.items():
                 for alias in aliases:
-                    if item_lower == alias.lower():
+                    if item_forms & singular_forms(alias.lower()):
                         print(f"[DEBUG] Alias match found: '{alias}' -> SKU: {sku}")
                         # Find the item data from the SKU
                         for category, items in MENU.items():
@@ -662,7 +961,20 @@ class HolyGuacamoleAgent(AgentBase):
                     
                     # Calculate cosine similarities
                     similarities = cosine_similarity(user_vector, self.menu_vectors)[0]
-                    
+
+                    # Combos share every word with their base items, so a bare
+                    # "burrito" scored highest against "Burrito Combo" (0.422)
+                    # and ordering "a burrito" silently added a $12.99 combo -
+                    # while a bare "taco" lost to "Taco Combo" and matched
+                    # NOTHING (0.372 < threshold). Unless the caller actually
+                    # said "combo", only consider non-combo items; combos are
+                    # reached explicitly or via upgrade_to_combo.
+                    if "combo" not in item_lower:
+                        similarities = similarities.copy()
+                        for _i, (_sku, _data, _cat) in enumerate(self.sku_map):
+                            if _cat == "combos" or "combo" in _data["name"].lower():
+                                similarities[_i] = -1.0
+
                     # Get the best match
                     best_idx = np.argmax(similarities)
                     best_score = similarities[best_idx]
@@ -780,20 +1092,82 @@ class HolyGuacamoleAgent(AgentBase):
                     },
                     "quantity": {
                         "type": "integer",
-                        "description": "How many to add",
+                        "description": "How many of this item to add. Use the exact number the customer said: 'two beef tacos' -> 2, 'a couple waters' -> 2, 'a few burritos' -> 3. If they name an item with no number, use 1.",
                         "minimum": 1,
                         "maximum": 10
                     }
                 },
-                "required": ["item_name"]
+                "required": ["item_name", "quantity"]
             }
         )
         def add_item(args, raw_data):
             """Add item to order"""
             order_state, global_data = get_order_state(raw_data)
+            print(f"[DEBUG] add_item args: {args}", flush=True)
             item_name = args["item_name"]
             quantity = args.get("quantity", 1)
-            
+
+            # Safety net: if the model dropped the count into the item name
+            # ("two tacos", "a couple burritos") instead of the quantity arg,
+            # recover it here so "two X" never silently becomes 1.
+            _num_words = {
+                "a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4,
+                "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+                "couple": 2, "few": 3, "several": 3, "dozen": 10,
+            }
+            try:
+                _lead = re.match(r"^\s*(\d+|a couple of|a couple|a few|a dozen|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|dozen)\s+(.*\S)\s*$", item_name.strip().lower())
+                if quantity == 1 and _lead:
+                    tok, rest = _lead.group(1), _lead.group(2)
+                    # Strip a trailing "of" ("a couple of waters") before the
+                    # lookup - taking the last word alone yielded "of" -> 1, so
+                    # the parser missed its own headline case.
+                    words = [w for w in tok.split() if w not in ("a", "an", "of")]
+                    parsed = int(tok) if tok.isdigit() else _num_words.get(words[-1] if words else "", 1)
+                    if parsed > 1:
+                        quantity = parsed
+                        item_name = rest
+                        print(f"[DEBUG] add_item recovered quantity={quantity} from name -> '{item_name}'", flush=True)
+            except Exception as _e:
+                print(f"[DEBUG] quantity-parse skipped: {_e}", flush=True)
+
+            # De-dupe the model's rapid duplicate tool-calls: of two identical
+            # add_item calls within the window for the same call, only one
+            # mutates. A real "two tacos" is a single quantity=2 call, so its
+            # signature is unique and unaffected.
+            # The slot is claimed AFTER validation (see _claim_dedup_slot below)
+            # so a duplicate of a FAILED call re-runs and repeats the real error
+            # instead of being acked - previously a duplicate of
+            # add_item("cheeseburger") answered "Okay!" and the model could tell
+            # the customer it was added.
+            _call_id = (raw_data or {}).get("call_id") or "unknown"
+            _sig = f"{item_name.strip().lower()}|{quantity}"
+
+            def _claim_dedup_slot():
+                with swaig_mutation_lock:
+                    _now2 = time.time()
+                    _recent_swaig_calls[_call_id] = {"sig": _sig, "ts": _now2, "response": None}
+                    if len(_recent_swaig_calls) > 500:
+                        for _k in [k for k, v in _recent_swaig_calls.items()
+                                   if _now2 - v.get("ts", 0) > 300]:
+                            _recent_swaig_calls.pop(_k, None)
+
+            def _remember_response(text):
+                """Replay the real answer if the duplicate lands after us."""
+                with swaig_mutation_lock:
+                    _e = _recent_swaig_calls.get(_call_id)
+                    if _e and _e.get("sig") == _sig:
+                        _e["response"] = text
+
+            with swaig_mutation_lock:
+                _prev = _recent_swaig_calls.get(_call_id)
+                _now = time.time()
+                if _prev and _prev.get("sig") == _sig and (_now - _prev.get("ts", 0)) < _SWAIG_DEDUP_WINDOW:
+                    print(f"[DEBUG] add_item deduped rapid duplicate: {_sig} (call {_call_id})", flush=True)
+                    # Replay what the first call actually said, so the model and
+                    # the customer hear a consistent answer.
+                    return SwaigFunctionResult(_prev.get("response") or "Okay!")
+
             # Enforce reasonable limits
             MAX_ITEMS_PER_TYPE = 20  # Max 20 of any single item
             MAX_TOTAL_ITEMS = 50     # Max 50 items total in order
@@ -810,6 +1184,20 @@ class HolyGuacamoleAgent(AgentBase):
             sku, item_data, category = find_menu_item(item_name)
             
             if not sku:
+                # A bare category word ("a taco", "a burrito") is ambiguous, not
+                # unavailable - several menu items match it. Saying "we don't
+                # have that" was both wrong and confusing, so ask which one.
+                # Per the prompt's rule we don't enumerate items; the customer
+                # has the menu on screen.
+                _matches = [d["name"] for _c, _items in MENU.items() if _c != "combos"
+                            for _s, d in _items.items()
+                            if singular_forms(item_name.strip().lower())
+                            & {w for word in d["name"].lower().replace("&", " ").split()
+                               for w in singular_forms(word)}]
+                if len(_matches) > 1:
+                    return SwaigFunctionResult(
+                        f"We have a few {item_name.strip().lower()} options - "
+                        "which one would you like? They're on the menu on your screen.")
                 return SwaigFunctionResult(f"I couldn't find '{item_name}' on our menu. Please check the menu on your screen for available items.")
             
             # Check current total items
@@ -853,8 +1241,12 @@ class HolyGuacamoleAgent(AgentBase):
                 if max_quantity_by_value <= 0:
                     return SwaigFunctionResult(f"Adding this would exceed our {dollars_to_words(MAX_ORDER_VALUE)} order limit. Your current subtotal is {dollars_to_words(order_state['subtotal'])}.")
                 quantity = min(quantity, max_quantity_by_value)
-                limited_message = f" (Limited to {quantity} to stay within ${MAX_ORDER_VALUE} order limit)"
+                limited_message = f" (Limited to {quantity} to stay within {dollars_to_words(MAX_ORDER_VALUE)} order limit)"
             
+            # Validation passed and we're about to mutate: claim the dedup slot
+            # now, so only genuine state changes suppress a following duplicate.
+            _claim_dedup_slot()
+
             if existing_item:
                 # Update quantity
                 existing_item["quantity"] += quantity
@@ -883,16 +1275,27 @@ class HolyGuacamoleAgent(AgentBase):
             
             # Check for combo opportunities after adding item
             combo_suggestion = check_combo_opportunity(order_state["items"])
-            
+
             response += f" Your total is now {dollars_to_words(order_state['total'])}."
-            
-            # Add combo suggestion if found
+
+            # Add combo suggestion if found - but don't re-pitch the SAME offer on
+            # every subsequent add. It used to nag once the order qualified; now a
+            # given pitch is spoken once and only returns if the offer changes.
             if combo_suggestion:
-                response += f"\n\n{combo_suggestion}"
+                # Store a short fingerprint, NOT the pitch text: order_state is
+                # echoed back into every later request/response, so keeping the
+                # full sentence bloated each payload (and duplicated its emoji).
+                _pitch_key = hashlib.sha1(combo_suggestion.encode()).hexdigest()[:12]
+                if order_state.get("last_combo_pitch") != _pitch_key:
+                    response += f"\n\n{combo_suggestion}"
+                    order_state["last_combo_pitch"] = _pitch_key
+            else:
+                order_state["last_combo_pitch"] = None
             
+            _remember_response(response)
             result = SwaigFunctionResult(response)
             save_order_state(result, order_state, global_data)
-            
+
             # Send event to UI with all calculated values
             # Get the actual item from order_state to have correct quantity
             final_item = None
@@ -967,31 +1370,48 @@ class HolyGuacamoleAgent(AgentBase):
             # If not found by SKU, try fuzzy match on the name in the order
             if not target_item:
                 item_lower = item_name.lower()
-                # Try exact substring match first
-                for i, order_item in enumerate(order_state["items"]):
-                    if item_lower in order_item["name"].lower():
-                        target_item = order_item
-                        item_index = i
-                        break
+                # Try exact substring match first. Collect ALL hits and prefer a
+                # plain item over a combo: "remove the burrito" hit the
+                # "Burrito Combo" line first purely because of list order and
+                # deleted the combo the customer had just upgraded to.
+                _subs = [(i, oi) for i, oi in enumerate(order_state["items"])
+                         if item_lower in oi["name"].lower()]
+                if _subs:
+                    _plain = [c for c in _subs if "combo" not in c[1]["name"].lower()]
+                    # Only prefer a plain item when the caller didn't say "combo".
+                    _pick = (_plain or _subs)[0] if "combo" not in item_lower else _subs[0]
+                    item_index, target_item = _pick
                 
-                # If still not found, try more flexible matching
+                # If still not found, try word-level matching (e.g. "bottles"
+                # matches "Bottled Water"). This used to accept a substring hit
+                # in EITHER direction on ANY word pair, so short words matched
+                # almost anything and "remove the burrito" could delete a
+                # Burrito Combo. Now: whole-word matches on de-pluralized words
+                # of >= 4 chars, and plain items win over combos.
                 if not target_item:
-                    # Check for partial matches (e.g., "bottles" matches "Bottled Water")
+                    MIN_WORD = 4
+                    search_forms = set()
+                    for w in item_lower.split():
+                        if len(w) >= MIN_WORD:
+                            search_forms |= singular_forms(w)
+
+                    candidates = []
                     for i, order_item in enumerate(order_state["items"]):
                         order_name_lower = order_item["name"].lower()
-                        # Check if any word in the search matches any word in the item name
-                        search_words = item_lower.split()
-                        item_words = order_name_lower.split()
-                        for search_word in search_words:
-                            for item_word in item_words:
-                                if search_word in item_word or item_word in search_word:
-                                    target_item = order_item
-                                    item_index = i
-                                    break
-                            if target_item:
-                                break
-                        if target_item:
-                            break
+                        item_forms = set()
+                        for w in order_name_lower.replace("&", " ").split():
+                            if len(w) >= MIN_WORD:
+                                item_forms |= singular_forms(w)
+                        if search_forms & item_forms:
+                            candidates.append((i, order_item))
+
+                    if candidates:
+                        # Prefer a non-combo line so "remove the burrito" takes
+                        # the Beef Burrito, not the Burrito Combo the customer
+                        # just paid to upgrade to.
+                        plain = [c for c in candidates
+                                 if "combo" not in c[1]["name"].lower()]
+                        item_index, target_item = (plain or candidates)[0]
             
             if not target_item:
                 return SwaigFunctionResult(f"You don't have {item_name} in your order.")
@@ -1041,7 +1461,7 @@ class HolyGuacamoleAgent(AgentBase):
             # Send event to UI based on whether item was completely removed
             if item_completely_removed:
                 # Item completely removed
-                result.add_action("user_event", {
+                result.swml_user_event({
                     "type": "item_removed",
                     "sku": removed_item["sku"],
                     "order_total": order_state["total"],
@@ -1051,7 +1471,7 @@ class HolyGuacamoleAgent(AgentBase):
                 })
             else:
                 # Item still exists with reduced quantity
-                result.add_action("user_event", {
+                result.swml_user_event({
                     "type": "quantity_modified",
                     "sku": removed_item["sku"],
                     "new_quantity": removed_item["quantity"],
@@ -1099,12 +1519,23 @@ class HolyGuacamoleAgent(AgentBase):
             MAX_TOTAL_ITEMS = 50
             MAX_ORDER_VALUE = 500.00
             
-            # Find item
+            # Find item. Resolve through the same alias/TF-IDF matcher add_item
+            # and remove_item use, so "make it two cokes" / "three sodas" /
+            # "a couple of guac" work instead of "you don't have that". Falls
+            # back to the old substring scan when the matcher can't resolve.
             item_lower = item_name.lower()
             modified_item = None
-            
+            target_sku, _target_data, _target_cat = find_menu_item(item_name)
+            if target_sku:
+                for order_item in order_state["items"]:
+                    if order_item["sku"] == target_sku:
+                        # Match by SKU so "taco" can't hit "Taco Combo" first.
+                        item_lower = order_item["name"].lower()
+                        break
+
             for order_item in order_state["items"]:
-                if item_lower in order_item["name"].lower():
+                if (target_sku and order_item["sku"] == target_sku) or \
+                   (not target_sku and item_lower in order_item["name"].lower()):
                     if new_quantity == 0:
                         # Remove item
                         order_state["items"].remove(order_item)
@@ -1127,8 +1558,16 @@ class HolyGuacamoleAgent(AgentBase):
                         potential_subtotal = sum(item["total"] for item in order_state["items"]) - order_item["total"] + (order_item["price"] * new_quantity)
                         if potential_subtotal > MAX_ORDER_VALUE:
                             max_quantity_by_value = int((MAX_ORDER_VALUE - (sum(item["total"] for item in order_state["items"]) - order_item["total"])) / order_item["price"])
+                            # A clamp of <= 0 would leave a quantity-0 line item in
+                            # the order (items vs item_count drift, "quantity to 0"
+                            # spoken). Refuse the change instead. add_item already
+                            # guards this; modify_quantity didn't.
+                            if max_quantity_by_value <= 0:
+                                return SwaigFunctionResult(
+                                    f"That would put the order over our {dollars_to_words(MAX_ORDER_VALUE)} limit, "
+                                    f"so I left {order_item['name']} as it was.")
                             new_quantity = max_quantity_by_value
-                            response = f"Changed {order_item['name']} quantity to {new_quantity} (to stay within ${MAX_ORDER_VALUE} order limit)."
+                            response = f"Changed {order_item['name']} quantity to {new_quantity} (to stay within {dollars_to_words(MAX_ORDER_VALUE)} order limit)."
                         
                         # Update quantity
                         order_item["quantity"] = new_quantity
@@ -1150,7 +1589,7 @@ class HolyGuacamoleAgent(AgentBase):
             save_order_state(result, order_state, global_data)
             
             # Send event to UI
-            result.add_action("user_event", {
+            result.swml_user_event({
                 "type": "quantity_modified",
                 "sku": modified_item.get("sku"),
                 "new_quantity": new_quantity if new_quantity > 0 else 0,
@@ -1186,7 +1625,7 @@ class HolyGuacamoleAgent(AgentBase):
             result = SwaigFunctionResult(response)
             
             # Send complete order to UI
-            result.add_action("user_event", {
+            result.swml_user_event({
                 "type": "order_reviewed",
                 "items": order_state["items"],
                 "subtotal": order_state["subtotal"],
@@ -1223,7 +1662,7 @@ class HolyGuacamoleAgent(AgentBase):
             result.swml_change_step("confirming_order")
             
             # Send event to UI with complete order details
-            result.add_action("user_event", {
+            result.swml_user_event({
                 "type": "order_finalized",
                 "items": order_state["items"],
                 "subtotal": order_state["subtotal"],
@@ -1247,7 +1686,18 @@ class HolyGuacamoleAgent(AgentBase):
         def process_payment(args, raw_data):
             """Process payment and generate order number"""
             order_state, global_data = get_order_state(raw_data)
-            
+
+            # Don't take payment on an empty order. Reachable because remove_item
+            # is available during confirmation: dropping the last item and then
+            # saying "yes, that's right" would otherwise assign an order number
+            # and announce a zero-dollar total.
+            if not order_state["items"]:
+                result = SwaigFunctionResult(
+                    "It looks like your order is empty. Let's add something first - "
+                    "what would you like?")
+                result.swml_change_step("taking_order")
+                return result
+
             # Generate order number
             order_state["order_number"] = random.randint(100, 999)
             
@@ -1262,7 +1712,7 @@ class HolyGuacamoleAgent(AgentBase):
             result.swml_change_step("payment_processing")
             
             # Send event to UI
-            result.add_action("user_event", {
+            result.swml_user_event({
                 "type": "payment_started",
                 "order_number": order_state["order_number"],
                 "total": order_state["total"]
@@ -1283,13 +1733,44 @@ class HolyGuacamoleAgent(AgentBase):
         def complete_order(args, raw_data):
             """Mark order as complete"""
             order_state, global_data = get_order_state(raw_data)
-            
-            order_number = order_state['order_number']
-            
-            response = f"Thank you for your order! Order number {order_number_to_words(order_number)} is complete.\n"
-            response += "Have a wonderful day!"
+
+            order_number = order_state.get('order_number')
+
+            # The model re-fires complete_order (observed twice, 0.5s apart).
+            # Once the order is finished, just re-acknowledge instead of
+            # re-emitting the completion event / re-clearing state.
+            if order_state.get("completed") and order_number:
+                return SwaigFunctionResult(
+                    f"Order number {order_number_to_words(order_number)} is all set. Have a great day!")
+
+            # The model sometimes jumps straight here and skips process_payment
+            # (observed in production), leaving order_number None. That used to
+            # raise KeyError('N') inside order_number_to_words, so the order was
+            # never cleared, the step never advanced and the UI never got
+            # 'order_completed' - the model then retried and crashed again.
+            # Assign a number here so the call still finishes cleanly.
+            if not order_number:
+                order_number = random.randint(100, 999)
+                order_state['order_number'] = order_number
+                logger.warning("complete_order called without a prior process_payment; "
+                               "assigned order number %s", order_number)
+
+            # The goodbye goes out as a `say` ACTION, not as the response text.
+            # Response text is spoken by the LLM asynchronously, so the hangup
+            # action fired while it was still talking and the call cut off
+            # mid-sentence. Actions run in order, so say-then-hangup guarantees
+            # the caller hears the whole thing (same pattern jmac uses before
+            # its transfer).
+            goodbye = (
+                f"Thank you for your order! Order number "
+                f"{order_number_to_words(order_number)} is complete. "
+                "We'll see you at the window - thank you for choosing Holy Guacamole!"
+            )
+            # Kept short and internal: this is what the model sees, not the caller.
+            response = "Order complete. The goodbye is being played and the call will end."
             
             # Clear the order but keep the order number
+            order_state["completed"] = True   # so a re-fired complete_order is a no-op
             order_state["items"] = []
             order_state["total"] = 0.00
             order_state["subtotal"] = 0.00
@@ -1304,11 +1785,16 @@ class HolyGuacamoleAgent(AgentBase):
             result.swml_change_step("order_complete")
             
             # Send event to UI
-            result.add_action("user_event", {
+            result.swml_user_event({
                 "type": "order_completed",
                 "order_number": order_number
             })
-            
+
+            # Speak the goodbye, THEN end the call. Actions execute in order, so
+            # the hangup waits for the say to finish.
+            result.say(goodbye)
+            result.hangup()
+
             return result
         
         @self.tool(
@@ -1332,6 +1818,8 @@ class HolyGuacamoleAgent(AgentBase):
             order_state["tax"] = 0.00
             order_state["order_number"] = None
             order_state["item_count"] = 0
+            order_state["completed"] = False       # a fresh order can complete again
+            order_state["last_combo_pitch"] = None # allow the combo pitch again
             
             # Check current state to determine response
             current_step = global_data.get("current_step", "greeting")
@@ -1350,7 +1838,7 @@ class HolyGuacamoleAgent(AgentBase):
                 result.swml_change_step("taking_order")
             
             # Send event to UI
-            result.add_action("user_event", {
+            result.swml_user_event({
                 "type": "order_cancelled",
                 "items": [],
                 "subtotal": 0,
@@ -1381,6 +1869,8 @@ class HolyGuacamoleAgent(AgentBase):
             order_state["tax"] = 0.00
             order_state["order_number"] = None
             order_state["item_count"] = 0
+            order_state["completed"] = False       # a fresh order can complete again
+            order_state["last_combo_pitch"] = None # allow the combo pitch again
             
             response = "Welcome back to Holy Guacamole! What can I get started for you?"
             
@@ -1391,7 +1881,7 @@ class HolyGuacamoleAgent(AgentBase):
             result.swml_change_step("greeting")
             
             # Send event to UI
-            result.add_action("user_event", {
+            result.swml_user_event({
                 "type": "new_order"
             })
             
@@ -1425,10 +1915,10 @@ class HolyGuacamoleAgent(AgentBase):
                 items_to_keep = []
                 
                 # First pass: count what we have
-                taco_count = sum(item["quantity"] for item in order_state["items"] if "taco" in item["name"].lower())
-                burrito_count = sum(item["quantity"] for item in order_state["items"] if "burrito" in item["name"].lower())
-                chips_count = sum(item["quantity"] for item in order_state["items"] if "chips" in item["name"].lower() and "salsa" in item["name"].lower())
-                drink_count = sum(item["quantity"] for item in order_state["items"] if "small" in item["name"].lower() and "drink" in item["name"].lower())
+                taco_count = sum(item["quantity"] for item in order_state["items"] if "taco" in item["name"].lower() and "combo" not in item["name"].lower())
+                burrito_count = sum(item["quantity"] for item in order_state["items"] if "burrito" in item["name"].lower() and "combo" not in item["name"].lower())
+                chips_count = sum(item["quantity"] for item in order_state["items"] if "chips" in item["name"].lower() and "salsa" in item["name"].lower() and "combo" not in item["name"].lower())
+                drink_count = sum(item["quantity"] for item in order_state["items"] if "small" in item["name"].lower() and "drink" in item["name"].lower() and "combo" not in item["name"].lower())
                 
                 # Calculate how many of each combo we can make
                 max_taco_combos = min(taco_count // 2, chips_count, drink_count)
@@ -1436,7 +1926,16 @@ class HolyGuacamoleAgent(AgentBase):
                 remaining_chips = chips_count - max_taco_combos
                 remaining_drinks = drink_count - max_taco_combos
                 max_burrito_combos = min(burrito_count, remaining_chips, remaining_drinks)
-                
+
+                # Nothing actually qualifies: the single-combo paths guard this,
+                # the "both" path didn't, and it produced the nonsense response
+                # "I've upgraded your order to , saving you zero dollars!".
+                if max_taco_combos == 0 and max_burrito_combos == 0:
+                    return SwaigFunctionResult(
+                        "You don't have the right items for a combo yet. A Taco Combo needs "
+                        "2 tacos, chips & salsa and a small drink; a Burrito Combo needs a "
+                        "burrito, chips & salsa and a small drink. Want me to add what's missing?")
+
                 # Track what we need to remove
                 tacos_to_remove = max_taco_combos * 2
                 burritos_to_remove = max_burrito_combos
@@ -1448,7 +1947,7 @@ class HolyGuacamoleAgent(AgentBase):
                     item_lower = item["name"].lower()
                     item_to_keep = item.copy()
                     
-                    if "taco" in item_lower and tacos_to_remove > 0:
+                    if "taco" in item_lower and "combo" not in item_lower and tacos_to_remove > 0:
                         if item["quantity"] <= tacos_to_remove:
                             removed_items.append(item)
                             tacos_to_remove -= item["quantity"]
@@ -1463,7 +1962,7 @@ class HolyGuacamoleAgent(AgentBase):
                             item_to_keep["total"] = round(item_to_keep["price"] * item_to_keep["quantity"], 2)
                             tacos_to_remove = 0
                     
-                    elif "burrito" in item_lower and burritos_to_remove > 0:
+                    elif "burrito" in item_lower and "combo" not in item_lower and burritos_to_remove > 0:
                         if item["quantity"] <= burritos_to_remove:
                             removed_items.append(item)
                             burritos_to_remove -= item["quantity"]
@@ -1478,7 +1977,7 @@ class HolyGuacamoleAgent(AgentBase):
                             item_to_keep["total"] = round(item_to_keep["price"] * item_to_keep["quantity"], 2)
                             burritos_to_remove = 0
                     
-                    elif "chips" in item_lower and "salsa" in item_lower and chips_to_remove > 0:
+                    elif "chips" in item_lower and "salsa" in item_lower and "combo" not in item_lower and chips_to_remove > 0:
                         if item["quantity"] <= chips_to_remove:
                             removed_items.append(item)
                             chips_to_remove -= item["quantity"]
@@ -1493,7 +1992,7 @@ class HolyGuacamoleAgent(AgentBase):
                             item_to_keep["total"] = round(item_to_keep["price"] * item_to_keep["quantity"], 2)
                             chips_to_remove = 0
                     
-                    elif "small" in item_lower and "drink" in item_lower and drinks_to_remove > 0:
+                    elif "small" in item_lower and "drink" in item_lower and "combo" not in item_lower and drinks_to_remove > 0:
                         if item["quantity"] <= drinks_to_remove:
                             removed_items.append(item)
                             drinks_to_remove -= item["quantity"]
@@ -1517,9 +2016,9 @@ class HolyGuacamoleAgent(AgentBase):
                         "sku": "C001",
                         "name": "Taco Combo",
                         "description": "2 tacos (your choice) + chips & salsa + small drink",
-                        "price": 9.99,
+                        "price": MENU["combos"]["C001"]["price"],
                         "quantity": max_taco_combos,
-                        "total": round(9.99 * max_taco_combos, 2)
+                        "total": round(MENU["combos"]["C001"]["price"] * max_taco_combos, 2)
                     })
                 
                 if max_burrito_combos > 0:
@@ -1527,9 +2026,9 @@ class HolyGuacamoleAgent(AgentBase):
                         "sku": "C002",
                         "name": "Burrito Combo",
                         "description": "Any burrito + chips & salsa + small drink",
-                        "price": 12.99,
+                        "price": MENU["combos"]["C002"]["price"],
                         "quantity": max_burrito_combos,
-                        "total": round(12.99 * max_burrito_combos, 2)
+                        "total": round(MENU["combos"]["C002"]["price"] * max_burrito_combos, 2)
                     })
                 
                 # Calculate total savings
@@ -1558,7 +2057,7 @@ class HolyGuacamoleAgent(AgentBase):
                 save_order_state(result, order_state, global_data)
                 
                 # Send event
-                result.add_action("user_event", {
+                result.swml_user_event({
                     "type": "combo_upgraded",
                     "items": order_state["items"],
                     "removed_items": [{"name": item["name"], "quantity": item["quantity"]} for item in removed_items],
@@ -1579,9 +2078,9 @@ class HolyGuacamoleAgent(AgentBase):
             if combo_type == "taco":
                 # Calculate how many taco combos we can make
                 # Need: 2 tacos, 1 chips & salsa, 1 small drink per combo
-                taco_count = sum(item["quantity"] for item in order_state["items"] if "taco" in item["name"].lower())
-                chips_count = sum(item["quantity"] for item in order_state["items"] if "chips" in item["name"].lower() and "salsa" in item["name"].lower())
-                drink_count = sum(item["quantity"] for item in order_state["items"] if "small" in item["name"].lower() and "drink" in item["name"].lower())
+                taco_count = sum(item["quantity"] for item in order_state["items"] if "taco" in item["name"].lower() and "combo" not in item["name"].lower())
+                chips_count = sum(item["quantity"] for item in order_state["items"] if "chips" in item["name"].lower() and "salsa" in item["name"].lower() and "combo" not in item["name"].lower())
+                drink_count = sum(item["quantity"] for item in order_state["items"] if "small" in item["name"].lower() and "drink" in item["name"].lower() and "combo" not in item["name"].lower())
                 
                 # Maximum combos we can make
                 max_combos = min(taco_count // 2, chips_count, drink_count)
@@ -1599,7 +2098,7 @@ class HolyGuacamoleAgent(AgentBase):
                     item_lower = item["name"].lower()
                     
                     # Remove tacos
-                    if "taco" in item_lower and tacos_to_remove > 0:
+                    if "taco" in item_lower and "combo" not in item_lower and tacos_to_remove > 0:
                         if item["quantity"] <= tacos_to_remove:
                             removed_items.append(item)
                             tacos_to_remove -= item["quantity"]
@@ -1617,7 +2116,7 @@ class HolyGuacamoleAgent(AgentBase):
                             items_to_keep.append(remaining)
                             tacos_to_remove = 0
                     # Remove chips & salsa
-                    elif "chips" in item_lower and "salsa" in item_lower and chips_to_remove > 0:
+                    elif "chips" in item_lower and "salsa" in item_lower and "combo" not in item_lower and chips_to_remove > 0:
                         if item["quantity"] <= chips_to_remove:
                             removed_items.append(item)
                             chips_to_remove -= item["quantity"]
@@ -1633,7 +2132,7 @@ class HolyGuacamoleAgent(AgentBase):
                             items_to_keep.append(remaining)
                             chips_to_remove = 0
                     # Remove small drinks
-                    elif "small" in item_lower and "drink" in item_lower and drinks_to_remove > 0:
+                    elif "small" in item_lower and "drink" in item_lower and "combo" not in item_lower and drinks_to_remove > 0:
                         if item["quantity"] <= drinks_to_remove:
                             removed_items.append(item)
                             drinks_to_remove -= item["quantity"]
@@ -1656,17 +2155,17 @@ class HolyGuacamoleAgent(AgentBase):
                     "sku": "C001",
                     "name": "Taco Combo",
                     "description": "2 tacos (your choice) + chips & salsa + small drink",
-                    "price": 9.99,
+                    "price": MENU["combos"]["C001"]["price"],
                     "quantity": max_combos,
-                    "total": round(9.99 * max_combos, 2)
+                    "total": round(MENU["combos"]["C001"]["price"] * max_combos, 2)
                 }
                 
             elif combo_type == "burrito":
                 # Calculate how many burrito combos we can make
                 # Need: 1 burrito, 1 chips & salsa, 1 small drink per combo
-                burrito_count = sum(item["quantity"] for item in order_state["items"] if "burrito" in item["name"].lower())
-                chips_count = sum(item["quantity"] for item in order_state["items"] if "chips" in item["name"].lower() and "salsa" in item["name"].lower())
-                drink_count = sum(item["quantity"] for item in order_state["items"] if "small" in item["name"].lower() and "drink" in item["name"].lower())
+                burrito_count = sum(item["quantity"] for item in order_state["items"] if "burrito" in item["name"].lower() and "combo" not in item["name"].lower())
+                chips_count = sum(item["quantity"] for item in order_state["items"] if "chips" in item["name"].lower() and "salsa" in item["name"].lower() and "combo" not in item["name"].lower())
+                drink_count = sum(item["quantity"] for item in order_state["items"] if "small" in item["name"].lower() and "drink" in item["name"].lower() and "combo" not in item["name"].lower())
                 
                 # Maximum combos we can make
                 max_combos = min(burrito_count, chips_count, drink_count)
@@ -1684,7 +2183,7 @@ class HolyGuacamoleAgent(AgentBase):
                     item_lower = item["name"].lower()
                     
                     # Remove burritos
-                    if "burrito" in item_lower and burritos_to_remove > 0:
+                    if "burrito" in item_lower and "combo" not in item_lower and burritos_to_remove > 0:
                         if item["quantity"] <= burritos_to_remove:
                             removed_items.append(item)
                             burritos_to_remove -= item["quantity"]
@@ -1702,7 +2201,7 @@ class HolyGuacamoleAgent(AgentBase):
                             items_to_keep.append(remaining)
                             burritos_to_remove = 0
                     # Remove chips & salsa
-                    elif "chips" in item_lower and "salsa" in item_lower and chips_to_remove > 0:
+                    elif "chips" in item_lower and "salsa" in item_lower and "combo" not in item_lower and chips_to_remove > 0:
                         if item["quantity"] <= chips_to_remove:
                             removed_items.append(item)
                             chips_to_remove -= item["quantity"]
@@ -1718,7 +2217,7 @@ class HolyGuacamoleAgent(AgentBase):
                             items_to_keep.append(remaining)
                             chips_to_remove = 0
                     # Remove small drinks
-                    elif "small" in item_lower and "drink" in item_lower and drinks_to_remove > 0:
+                    elif "small" in item_lower and "drink" in item_lower and "combo" not in item_lower and drinks_to_remove > 0:
                         if item["quantity"] <= drinks_to_remove:
                             removed_items.append(item)
                             drinks_to_remove -= item["quantity"]
@@ -1741,16 +2240,16 @@ class HolyGuacamoleAgent(AgentBase):
                     "sku": "C002",
                     "name": "Burrito Combo",
                     "description": "Any burrito + chips & salsa + small drink",
-                    "price": 12.99,
+                    "price": MENU["combos"]["C002"]["price"],
                     "quantity": max_combos,
-                    "total": round(12.99 * max_combos, 2)
+                    "total": round(MENU["combos"]["C002"]["price"] * max_combos, 2)
                 }
             else:
                 return SwaigFunctionResult("I can only upgrade to taco or burrito combos.")
             
             # Calculate savings
             removed_total = sum(item["total"] for item in removed_items)
-            savings = removed_total - combo["total"]
+            savings = round(removed_total - combo["total"], 2)
             
             # Update order
             items_to_keep.append(combo)
@@ -1774,7 +2273,7 @@ class HolyGuacamoleAgent(AgentBase):
             save_order_state(result, order_state, global_data)
             
             # Send comprehensive event to UI
-            result.add_action("user_event", {
+            result.swml_user_event({
                 "type": "combo_upgraded",
                 "items": order_state["items"],
                 "removed_items": [{"name": item["name"], "quantity": item["quantity"]} for item in removed_items],
@@ -1788,12 +2287,7 @@ class HolyGuacamoleAgent(AgentBase):
             
             return result
         
-        # Configure voice
-        self.add_language(
-            name="English",
-            code="en-US",
-            voice="elevenlabs.adam"
-        )
+        # Voice is configured dynamically in on_swml_request based on user selection
         
         # Add speech hints
         self.add_hints([
@@ -1859,11 +2353,46 @@ class HolyGuacamoleAgent(AgentBase):
             self.set_param("video_talking_file", f"{base_url}/sigmond_cc_talking.mp4")
             print(f"Set video URLs to use host: {base_url}")
         else:
-            # Fallback to default if no host header found
-            self.set_param("video_idle_file", "https://briankwest.ngrok.io/sigmond_cc_idle.mp4")
-            self.set_param("video_talking_file", "https://briankwest.ngrok.io/sigmond_cc_talking.mp4")
-            print("No host header found, using default video URLs")
-        
+            # No Host header — fall back to the configured public base URL
+            # (same precedence as the SWML handler setup above) instead of a
+            # hardcoded personal dev tunnel.
+            base_url = os.getenv("SWML_PROXY_URL_BASE", os.getenv("APP_URL", "")).rstrip("/")
+            if base_url:
+                self.set_param("video_idle_file", f"{base_url}/sigmond_cc_idle.mp4")
+                self.set_param("video_talking_file", f"{base_url}/sigmond_cc_talking.mp4")
+                print(f"No host header found, using configured base URL: {base_url}")
+            else:
+                print("No host header and no SWML_PROXY_URL_BASE/APP_URL — leaving video URLs unset")
+
+        # Resolve the voice for THIS call. /get_token records the caller's pick
+        # against the guest id of the token it minted, and the call arrives from
+        # sip:guest-<uuid>@... - so we can match them up instead of reading a
+        # single process-wide file that any other caller could overwrite
+        # mid-order. Falls back to the shared file (inbound PSTN has no guest
+        # id) and then to the default.
+        selected_voice = None
+        guest_id = _guest_id_from_request(request_data)
+        if guest_id:
+            selected_voice = get_voice_for_guest(guest_id)
+            if selected_voice:
+                print(f"Using voice for guest {guest_id[:18]}: {selected_voice}", flush=True)
+        if not selected_voice:
+            selected_voice = get_stored_voice() or DEFAULT_VOICE
+            print(f"Using voice from store (no per-call match): {selected_voice}", flush=True)
+        default_voice = DEFAULT_VOICE
+
+        # Clear any existing languages to prevent accumulation across calls
+        if hasattr(self, '_languages'):
+            self._languages = []
+
+        # Configure voice dynamically
+        self.add_language(
+            name="English",
+            code="en-US",
+            voice=selected_voice
+        )
+        self._languages[-1]["params"] = {"streaming": True}
+
         # Call parent implementation
         return super().on_swml_request(request_data, callback_path, request)
     
@@ -1931,7 +2460,7 @@ def create_server():
     # This is how web clients get authentication tokens for WebRTC calls
     # ─────────────────────────────────────────────────────────────────────────
     @server.app.get("/get_token")
-    def get_token():
+    def get_token(voice: str = DEFAULT_VOICE):
         """
         Generate a guest token for the web client.
 
@@ -1943,6 +2472,18 @@ def create_server():
 
         The frontend uses this to initialize the SignalWire client and dial.
         """
+        # Validate against the shipped voice lists before storing. `voice` is a
+        # free-form query param that lands in the SWML `voice` field, so a bogus
+        # value (or a stale id from a client's localStorage) made the call fail
+        # at answer. Unknown values fall back to the default instead.
+        if not is_known_voice(voice):
+            logger.warning("Rejected unknown voice %r from /get_token; using default", voice)
+            voice = DEFAULT_VOICE
+
+        # Store selected voice in shared file (works across gunicorn workers)
+        set_stored_voice(voice)
+        print(f"Stored voice selection: {voice}", flush=True)
+
         client = get_rest_client()
 
         # Validate configuration
@@ -1971,6 +2512,14 @@ def create_server():
             )
             guest_token = guest.get("token", "")
 
+            # Bind the caller's voice pick to THIS token's guest identity, so the
+            # SWML render for their call picks it up (see _guest_id_from_request)
+            # rather than reading a file another caller may have overwritten.
+            _gid = _guest_id_from_request({"address_uri": guest.get("address_uri", "")})
+            if _gid:
+                set_voice_for_guest(_gid, voice)
+                logger.info("Bound voice %s to guest %s", voice, _gid[:18])
+
             # Return token and the address to dial
             return {
                 "token": guest_token,
@@ -1998,6 +2547,54 @@ def create_server():
     web_dir = Path(__file__).parent / "web"
     if web_dir.exists():
         server.serve_static_files(str(web_dir))
+
+    # The SDK's static handler sends no Cache-Control at all, so browsers cache
+    # the HTML shell heuristically. That shell carries the /app.js?v=N reference
+    # AND the whole inline <style> theme block, so a stale copy kept serving old
+    # JS/CSS no matter how many times the version was bumped (this bit us three
+    # times). Make the shell always revalidate; let real assets stay cacheable.
+    # Starlette's JSONResponse renders with ensure_ascii=False, so any non-ASCII
+    # character (emoji, accents, curly quotes) makes the body's BYTE length
+    # exceed its CHARACTER length. The SWAIG consumer reads by character count,
+    # so the surplus bytes bleed into the next read and the whole turn fails with
+    # webhook_fail/parse_error. Re-encoding with ensure_ascii=True sends the same
+    # data as \uXXXX escapes - pure ASCII, byte length == char length - and the
+    # receiving JSON parser decodes it back to the original characters.
+    @server.app.middleware("http")
+    async def _ascii_safe_json(request, call_next):
+        response = await call_next(request)
+        ctype = response.headers.get("content-type", "")
+        if not ctype.startswith("application/json"):
+            return response
+        body = b"".join([chunk async for chunk in response.body_iterator])
+        try:
+            escaped = json.dumps(json.loads(body), ensure_ascii=True,
+                                 allow_nan=False, separators=(",", ":")).encode("ascii")
+        except Exception:
+            escaped = body        # not re-encodable: pass through untouched
+        headers = dict(response.headers)
+        headers.pop("content-length", None)   # let Starlette recompute it
+        return Response(content=escaped, status_code=response.status_code,
+                        headers=headers, media_type=ctype)
+
+    @server.app.middleware("http")
+    async def _cache_headers(request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        is_shell = path in ("/", "/index.html") or path.endswith(".html")
+        ctype = response.headers.get("content-type", "")
+        if is_shell or ctype.startswith("text/html"):
+            response.headers["Cache-Control"] = "no-store, must-revalidate"
+        elif path.endswith((".js", ".css")):
+            # no-cache = keep the copy but ALWAYS revalidate against the ETag.
+            # Cheap (304s when unchanged) and a forgotten ?v= bump can no longer
+            # leave a browser running last week's script.
+            response.headers["Cache-Control"] = "no-cache"
+        elif path.endswith((".png", ".jpg", ".jpeg", ".mp4", ".woff2", ".json")):
+            # Content-addressed by name here; a day of caching is plenty and the
+            # ETag still forces a revalidate after that.
+            response.headers.setdefault("Cache-Control", "public, max-age=86400")
+        return response
 
     # ─────────────────────────────────────────────────────────────────────────
     # Startup: Register SWML handler

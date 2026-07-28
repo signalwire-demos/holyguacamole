@@ -1,0 +1,134 @@
+[
+  {
+    "voiceId": "elevenlabs.adam",
+    "displayName": "Adam",
+    "description": "Deep, mature male voice with a warm tone",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.alice",
+    "displayName": "Alice",
+    "description": "Confident, articulate female voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.aria",
+    "displayName": "Aria",
+    "description": "Expressive, natural female voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.bill",
+    "displayName": "Bill",
+    "description": "Authoritative, deep male voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.brian",
+    "displayName": "Brian",
+    "description": "Friendly, conversational male voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.callum",
+    "displayName": "Callum",
+    "description": "Young, energetic male voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.charlie",
+    "displayName": "Charlie",
+    "description": "Casual, approachable male voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.charlotte",
+    "displayName": "Charlotte",
+    "description": "Professional, clear female voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.chris",
+    "displayName": "Chris",
+    "description": "Calm, reassuring male voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.daniel",
+    "displayName": "Daniel",
+    "description": "British male voice with clarity",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.eric",
+    "displayName": "Eric",
+    "description": "Natural, conversational male voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.george",
+    "displayName": "George",
+    "description": "Warm British male voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.jessica",
+    "displayName": "Jessica",
+    "description": "Warm, friendly female voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.laura",
+    "displayName": "Laura",
+    "description": "Soft, soothing female voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.liam",
+    "displayName": "Liam",
+    "description": "Young, dynamic male voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.lily",
+    "displayName": "Lily",
+    "description": "Bright, cheerful female voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.matilda",
+    "displayName": "Matilda",
+    "description": "Warm, expressive female voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.rachel",
+    "displayName": "Rachel",
+    "description": "Clear, professional female voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.river",
+    "displayName": "River",
+    "description": "Non-binary, versatile voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.roger",
+    "displayName": "Roger",
+    "description": "Mature, authoritative male voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.sarah",
+    "displayName": "Sarah",
+    "description": "Soft, gentle female voice",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.will",
+    "displayName": "Will",
+    "description": "Friendly, approachable male voice",
+    "languages": ["en"]
+  }
+]
