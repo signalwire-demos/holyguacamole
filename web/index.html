@@ -4,263 +4,426 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Holy Guacamole! - Drive-Thru Order System</title>
-    
+
     <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="Holy Guacamole! - AI-Powered Drive-Thru">
     <meta property="og:description" content="Order delicious Mexican food with Sigmond, our AI drive-thru assistant. Fresh tacos, burritos, and more!">
     <meta property="og:type" content="website">
     <meta property="og:image" content="/logo.png">
-    
+    <meta name="theme-color" content="#0E1108">
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-    <!-- Apply the saved theme before first paint (avoids a flash of Classic). -->
+    <!-- Apply the saved theme before first paint (avoids a flash of the default). -->
     <script>
         try {
             document.documentElement.setAttribute(
                 'data-theme', localStorage.getItem('guacamoleTheme') || 'classic');
         } catch (e) {}
     </script>
-    
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* =====================================================================
+           HOLY GUACAMOLE — design system
+           ---------------------------------------------------------------------
+           Everything below is token-driven: components only ever reference the
+           custom properties declared in :root, so a theme is nothing more than
+           a block that re-maps those tokens. Adding a theme means overriding
+           values, never re-styling components.
+
+           The default palette is sampled straight from the storefront artwork
+           (web/placeholder.png): chartreuse sign lettering, olive apron/wall,
+           near-black menu board, warm gold sunburst rays, and Sigmond's cyan
+           eyes.
+           ===================================================================== */
+
+        :root {
+            color-scheme: dark;
+
+            /* ---- Raw palette (sampled from the artwork) -------------------- */
+            --guac-lime:       #B7D93C;   /* sign + apron lettering            */
+            --guac-olive:      #6F8324;   /* wall + shirt                      */
+            --guac-olive-deep: #38460F;   /* shadowed wall                     */
+            --guac-gold:       #F5C842;   /* sunburst rays, board hairlines    */
+            --guac-pit:        #7A4A22;   /* avocado pit                       */
+            --sigmond-cyan:    #5CC8F5;   /* Sigmond's eyes                    */
+            --terracotta:      #C4472E;   /* the one warm red in the room      */
+
+            /* ---- Semantic surfaces ---------------------------------------- */
+            --bg:            #0E1108;
+            --surface:       #171B0F;
+            --surface-2:     #1D2314;
+            --surface-3:     #262D1A;
+            --hairline:      rgba(214, 233, 138, .11);
+            --border:        rgba(214, 233, 138, .17);
+            --border-strong: rgba(214, 233, 138, .30);
+
+            /* ---- Semantic text -------------------------------------------- */
+            --fg:            #F2F5E6;
+            --fg-muted:      #AFB89B;   /* descriptions, timestamps   (7.4:1) */
+            --fg-subtle:     #8F987E;   /* JSON dumps, de-emphasized  (5.2:1) */
+
+            /* ---- Semantic accents ----------------------------------------- */
+            /* Each accent comes as a trio: the colour itself, a soft tint for
+               fills, and a `-line` value for borders drawn in that tint. */
+            --primary:       var(--guac-lime);
+            --primary-ink:   #10140A;                     /* text on primary  */
+            --primary-soft:  rgba(183, 217, 60, .13);
+            --primary-line:  rgba(183, 217, 60, .30);
+            --accent:        var(--guac-gold);
+            --accent-soft:   rgba(245, 200, 66, .13);
+            --accent-line:   rgba(245, 200, 66, .34);
+            --info:          var(--sigmond-cyan);
+            --info-soft:     rgba(92, 200, 245, .13);
+            --info-line:     rgba(92, 200, 245, .30);
+            --danger:        var(--terracotta);
+            --danger-ink:    #FFFFFF;
+            --danger-soft:   rgba(196, 71, 46, .15);
+            --danger-line:   rgba(196, 71, 46, .28);
+            --pulse-ring:    rgba(183, 217, 60, .55);
+
+            /* Glyphs for the custom select + checkbox. Drawn via CSS mask so
+               they inherit the theme's colours instead of being baked into the
+               data URI (the fill below is only there to make the mask opaque). */
+            --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.5L6 8.5L10 4.5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            --tick:    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.4L4.8 8.7L9.5 3.5' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+            /* ---- Page backdrop: the olive wall + warm ceiling light -------- */
+            --page-wash:
+                radial-gradient(1200px 620px at 50% -180px, rgba(111, 131, 36, .34), transparent 70%),
+                radial-gradient(760px 420px at 88% 6%,     rgba(245, 200, 66, .09), transparent 68%);
+
+            /* ---- Shape & depth -------------------------------------------- */
+            --r-sm:  8px;
+            --r-md:  12px;
+            --r-lg:  18px;
+            --r-xl:  24px;
+            --r-pill: 999px;
+            --shadow-1: 0 1px 2px rgba(0, 0, 0, .40);
+            --shadow-2: 0 12px 32px -12px rgba(0, 0, 0, .70), 0 2px 8px rgba(0, 0, 0, .35);
+            --shadow-3: 0 24px 60px -20px rgba(0, 0, 0, .80);
+            --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px var(--primary);
+
+            /* ---- Type ------------------------------------------------------ */
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    "Helvetica Neue", Arial, sans-serif;
+            --font-display: ui-rounded, "SF Pro Rounded", "Segoe UI Variable Display",
+                    "Segoe UI", system-ui, var(--font);
+            --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
         }
 
+        /* ---------------------------------------------------------------------
+           Reset
+           --------------------------------------------------------------------- */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { -webkit-text-size-adjust: 100%; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a1a;
+            font-family: var(--font);
+            font-size: 16px;
+            line-height: 1.5;
+            background: var(--page-wash), var(--bg);
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: var(--fg);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            margin: 0;
-            position: relative;
-        }
-        
-        /* Terracotta roof tiles pattern */
-        .roof-tiles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 100px;
-            background: 
-                repeating-linear-gradient(
-                    90deg,
-                    #B85450 0px,
-                    #C1665A 15px,
-                    #9C4A45 30px,
-                    #B85450 45px
-                ),
-                repeating-conic-gradient(
-                    from 180deg at 50% 0%,
-                    #A0522D 0deg,
-                    #C1665A 60deg,
-                    #8B4513 120deg,
-                    #A0522D 180deg
-                );
-            background-size: 90px 50px, 45px 25px;
-            background-position: 0 0, 0 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
-            z-index: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .roof-title {
-            position: relative;
-            z-index: 2;
-            color: white;
-            text-align: center;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-        }
-        
-        .roof-title h1 {
-            font-size: 2rem;
-            margin: 0;
-            line-height: 1.2;
-        }
-        
-        .roof-title p {
-            font-size: 1rem;
-            margin: 0;
-            opacity: 0.95;
-        }
-        
-        .roof-tiles::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 100%;
-            background: repeating-conic-gradient(
-                from 0deg at 45px 50px,
-                transparent 0deg 180deg,
-                rgba(139, 69, 19, 0.3) 180deg 360deg
-            );
-            background-size: 90px 50px;
-            background-position: 0 0;
-        }
-        
-        .roof-tiles::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.4), transparent);
+            -webkit-font-smoothing: antialiased;
         }
 
-        .github-link {
-            /* absolute, not fixed: as a fixed element it floated over the page
-               and covered the status card between ~60-160px of scroll, hiding
-               the "Call ended - thank you for choosing Holy Guacamole!" message.
-               It belongs with the header, so let it scroll away. */
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: white;
-            color: #333;
-            padding: 10px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.95rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: all 0.3s;
+        img, svg, video { display: block; max-width: 100%; }
+
+        /* One consistent focus treatment for every interactive control. */
+        a:focus-visible,
+        button:focus-visible,
+        select:focus-visible,
+        input:focus-visible,
+        [role="button"]:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+            border-radius: var(--r-sm);
+        }
+
+        /* =====================================================================
+           Header
+           ---------------------------------------------------------------------
+           Deliberately NOT sticky/fixed. An earlier fixed header floated over
+           the page between ~60-160px of scroll and hid the status card's
+           "Call ended" message; keeping it in normal flow means it scrolls away.
+           ===================================================================== */
+        .site-header {
+            position: relative;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 24px;
+            overflow: hidden;
+            box-shadow: var(--shadow-2);
+
+            /* The painted olive wall behind the counter: a warm pool of light
+               from the pendant lamp on the left, falling off to shadow on the
+               right, over the wall's base green. */
+            background:
+                radial-gradient(680px 260px at 10% -40%,  rgba(255, 214, 120, .22), transparent 72%),
+                radial-gradient(900px 300px at 100% 130%, rgba(0, 0, 0, .50),       transparent 70%),
+                linear-gradient(180deg, #56671E 0%, #435217 58%, #2C380C 100%);
+        }
+
+        /* Wall texture: fine vertical striations plus a soft plaster hatch,
+           both at very low contrast so it reads as surface, not as stripes. */
+        .site-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                repeating-linear-gradient(90deg,
+                    rgba(255, 255, 255, .055) 0 1px, transparent 1px 7px),
+                repeating-linear-gradient(122deg,
+                    rgba(0, 0, 0, .07) 0 2px, transparent 2px 9px);
+            mix-blend-mode: soft-light;
+            opacity: .95;
+        }
+
+        /* The menu board's warm outline, flush along the bottom edge. */
+        .site-header::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 2px;
+            background: linear-gradient(90deg,
+                rgba(245, 200, 66, .25), var(--accent) 22%, var(--primary) 52%, var(--accent) 80%, rgba(245, 200, 66, .25));
+            opacity: .7;
+            pointer-events: none;
+        }
+
+        .site-header > * { position: relative; z-index: 1; }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .brand-mark {
+            width: 40px;
+            height: 40px;
+            flex: none;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .5));
+        }
+
+        .brand-text { min-width: 0; }
+
+        /* Sign lettering: the painted chartreuse wordmark from the wall. */
+        .brand-text h1 {
+            font-family: var(--font-display);
+            font-size: 1.7rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -.02em;
+            color: var(--guac-lime);
+            text-shadow: 0 2px 0 rgba(0, 0, 0, .35), 0 4px 18px rgba(183, 217, 60, .28);
+            white-space: nowrap;
+        }
+
+        .brand-text p {
+            font-size: .8rem;
+            font-weight: 600;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .86);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, .45);
+            white-space: nowrap;
+        }
+
+        /* Dark glass chip — reads like the menu board hung on the wall. */
+        .github-link {
+            display: inline-flex;
+            align-items: center;
             gap: 8px;
+            flex: none;
+            padding: 9px 16px;
+            border-radius: var(--r-pill);
+            border: 1px solid rgba(255, 255, 255, .16);
+            background: rgba(12, 15, 7, .55);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            color: #F2F5E6;
+            font-size: .9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: border-color .2s, background .2s, transform .2s;
         }
 
         .github-link:hover {
-            background: #f0f0f0;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            background: rgba(12, 15, 7, .75);
+            border-color: rgba(255, 255, 255, .32);
+            transform: translateY(-1px);
         }
 
-        .github-link svg {
-            width: 20px;
-            height: 20px;
-            fill: #333;
-        }
+        .github-link svg { width: 18px; height: 18px; fill: currentColor; }
 
+        /* =====================================================================
+           Layout
+           ===================================================================== */
         .main-container {
             flex: 1;
-            display: flex;
-            gap: 20px;
-            padding: 20px;
-            padding-top: 120px; /* Space for roof tiles */
+            width: 100%;
             max-width: 1400px;
             margin: 0 auto;
-            width: 100%;
+            padding: 28px 24px 64px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 380px;
+            gap: 24px;
+            align-items: start;
         }
 
-        .left-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            align-items: center;
-            justify-content: flex-start;
-        }
-
+        .left-panel,
         .right-panel {
-            width: 350px;
             display: flex;
             flex-direction: column;
             gap: 20px;
+            min-width: 0;
         }
 
+        /* =====================================================================
+           Card — the menu-board panel from the artwork: near-black, thin warm
+           outline, soft depth.
+           ===================================================================== */
         .card {
-            background: white;
-            border-radius: 15px;
+            background: linear-gradient(180deg, var(--surface), var(--surface-2));
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
             padding: 20px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: var(--shadow-2);
         }
 
         .card-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #C1272D;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #FFD700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-display);
+            font-size: .95rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--hairline);
         }
 
-        #video-container {
-            background: linear-gradient(135deg, #F5E6D3 0%, #E6D7B8 50%, #D4C5A0 100%);
-            border-radius: 15px;
-            width: 100%;
-            max-width: 810px;
-            max-height: 540px; /* Maximum height to maintain ratio */
-            aspect-ratio: 1620 / 1080;  /* Maintains exact aspect ratio */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 0 !important;
-            margin: 0 auto !important;
+        /* Small gold tick before every section title, echoing the board rules. */
+        .card-title::before {
+            content: '';
+            width: 3px;
+            height: 15px;
+            flex: none;
+            border-radius: 2px;
+            background: var(--accent);
         }
-        
-        #video-placeholder {
+
+        /* =====================================================================
+           Video / avatar frame
+           ===================================================================== */
+        /* Fills the column so its edges line up with the menu board below it. */
+        #video-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1620 / 1080;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            background: var(--surface-2);
+            box-shadow: var(--shadow-3);
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 0;
-            text-align: center;
+        }
+
+        #video-placeholder {
+            position: relative;
             width: 100%;
             height: 100%;
-            position: relative;
             cursor: pointer;   /* the whole art is clickable = Start Ordering */
-        }
-        /* Subtle affordance that the art is clickable. */
-        #video-placeholder:hover .placeholder-fill {
-            filter: brightness(1.05);
         }
 
         /* Placeholder art fills the whole video frame (edge to edge). */
         #video-placeholder .placeholder-fill {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 15px;
+            transition: transform .5s ease, filter .3s ease;
         }
 
-        /* Hint text pinned to the bottom of the frame, on a solid dark pill so
-           it stays legible over the busy artwork instead of blending in. */
+        #video-placeholder:hover .placeholder-fill {
+            transform: scale(1.015);
+            filter: brightness(1.04) saturate(1.04);
+        }
+
+        /* Bottom scrim so the hint stays legible over the busy artwork. */
+        #video-placeholder::after {
+            content: '';
+            position: absolute;
+            inset: auto 0 0 0;
+            height: 42%;
+            background: linear-gradient(180deg, transparent, rgba(8, 10, 5, .82));
+            pointer-events: none;
+        }
+
         #video-placeholder .placeholder-hint {
             position: absolute;
-            bottom: 18px;
+            bottom: 22px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1;
-            margin: 0;
-            padding: 9px 20px;
-            color: #fff;
-            font-size: 1.1rem;
-            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 22px;
+            border-radius: var(--r-pill);
+            /* Colours are pinned rather than themed: this pill floats over the
+               photograph, not over a themed surface, so the light theme's dark
+               ink would land on the dark glass and vanish. */
+            border: 1px solid rgba(183, 217, 60, .35);
+            background: rgba(14, 17, 8, .72);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            color: #F2F5E6;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: .01em;
             white-space: nowrap;
-            background: rgba(0, 0, 0, 0.72);
-            border-radius: 999px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+            box-shadow: var(--shadow-2);
+        }
+
+        /* Pulsing lime dot: the "we're ready for you" cue. */
+        #video-placeholder .placeholder-hint::before {
+            content: '';
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--guac-lime);
+            box-shadow: 0 0 0 0 var(--pulse-ring);
+            animation: dot-pulse 2s ease-out infinite;
+        }
+
+        @keyframes dot-pulse {
+            0%   { box-shadow: 0 0 0 0 var(--pulse-ring); }
+            70%  { box-shadow: 0 0 0 9px transparent; }
+            100% { box-shadow: 0 0 0 0 transparent; }
         }
 
         /* Style any video element SignalWire injects */
@@ -268,8 +431,7 @@
         #video-container > div > video {
             width: 100% !important;
             height: 100% !important;
-            object-fit: cover !important; /* Fill the frame like the placeholder image */
-            border-radius: 15px;
+            object-fit: cover !important;   /* fill the frame like the placeholder */
             position: absolute;
             top: 0;
             left: 0;
@@ -277,7 +439,7 @@
             margin: 0 !important;
             padding: 0 !important;
         }
-        
+
         /* SignalWire may inject wrapper divs */
         #video-container > div {
             width: 100% !important;
@@ -288,13 +450,14 @@
             margin: 0 !important;
             padding: 0 !important;
         }
-        
+
         /* Hide local video if present */
         #video-container video[id*="local"],
-        #video-container video.localVideo {
-            display: none;
-        }
+        #video-container video.localVideo { display: none; }
 
+        /* =====================================================================
+           Buttons
+           ===================================================================== */
         .controls {
             display: flex;
             gap: 10px;
@@ -302,760 +465,722 @@
         }
 
         button {
-            background: #568203;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 1rem;
+            font-family: inherit;
+            font-size: .98rem;
+            font-weight: 700;
+            letter-spacing: .01em;
+            padding: 12px 22px;
+            border: 1px solid transparent;
+            border-radius: var(--r-pill);
+            background: var(--primary);
+            color: var(--primary-ink);
             cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 600;
+            transition: filter .18s, transform .18s, box-shadow .18s, background .18s;
         }
 
-        button:hover {
-            background: #6A9B04;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        button:hover:not(:disabled) {
+            filter: brightness(1.06);
+            transform: translateY(-1px);
         }
+
+        button:active:not(:disabled) { transform: translateY(0); filter: brightness(.96); }
 
         button:disabled {
-            background: #ccc;
+            background: var(--surface-3);
+            color: var(--fg-subtle);
             cursor: not-allowed;
             transform: none;
+            filter: none;
         }
 
-        button.danger {
-            background: #C1272D;
+        button.danger { background: var(--danger); color: var(--danger-ink); }
+
+        /* Mute is a secondary action — it shouldn't compete with End Call, and
+           two saturated fills side by side read as two primary choices. */
+        #muteBtn {
+            background: var(--surface-3);
+            color: var(--fg);
+            border-color: var(--border);
+        }
+        #muteBtn:hover:not(:disabled) { border-color: var(--border-strong); filter: brightness(1.14); }
+
+        /* Start Ordering glows in Sigmond's eye colour — the cyan ties the CTA
+           to the character on screen. */
+        #connectBtn {
+            box-shadow: 0 0 16px var(--info-soft), 0 0 38px rgba(92, 200, 245, .18);
+            animation: sigmond-pulse 2.8s ease-in-out infinite;
         }
 
-        button.danger:hover {
-            background: #D43840;
+        #connectBtn:hover:not(:disabled) {
+            box-shadow: 0 0 22px rgba(92, 200, 245, .55), 0 0 52px rgba(92, 200, 245, .30);
+            animation: none;   /* hold steady while hovered */
         }
 
-        #order-display {
-            min-height: 300px;
+        /* No glow once it's disabled (connecting / in-call) — the button is
+           inert then and a pulsing CTA would be misleading. */
+        #connectBtn:disabled { box-shadow: none; animation: none; }
+
+        @keyframes sigmond-pulse {
+            0%, 100% { box-shadow: 0 0 14px rgba(92, 200, 245, .28), 0 0 30px rgba(92, 200, 245, .12); }
+            50%      { box-shadow: 0 0 20px rgba(92, 200, 245, .50), 0 0 46px rgba(92, 200, 245, .26); }
         }
+
+        /* =====================================================================
+           Status pill
+           ---------------------------------------------------------------------
+           Base styles live on the #id, not a class: app.js clears className
+           entirely on every status change and re-adds only the state class.
+           ===================================================================== */
+        #status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: var(--r-md);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--fg);
+            font-weight: 600;
+            font-size: .95rem;
+            box-shadow: var(--shadow-1);
+        }
+
+        #status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            flex: none;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        /* State selectors are id-qualified so they outrank the #status base
+           rule above without needing !important. */
+        #status.status-greeting   { background: var(--primary-soft); border-color: var(--primary-line); color: var(--primary); }
+        #status.status-ordering   { background: var(--accent-soft);  border-color: var(--accent-line);  color: var(--accent);  }
+        #status.status-confirming { background: var(--info-soft);    border-color: var(--info-line);    color: var(--info);    }
+        #status.status-payment    { background: var(--accent-soft);  border-color: var(--accent-line);  color: var(--accent);  }
+
+        /* =====================================================================
+           Order panel
+           ===================================================================== */
+        #order-display { min-height: 260px; }
+
+        .order-empty {
+            text-align: center;
+            color: var(--fg-muted);
+            padding: 48px 20px;
+            font-size: .95rem;
+        }
+
+        .order-item-row { margin-bottom: 10px; }
 
         .order-item {
             display: flex;
             justify-content: space-between;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: #FFF8DC;
-            border-radius: 8px;
-            animation: slideIn 0.3s ease;
+            gap: 12px;
+            padding: 11px 14px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--hairline);
+            background: var(--surface-2);
+            animation: slideIn .3s ease;
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            from { opacity: 0; transform: translateX(-14px); }
+            to   { opacity: 1; transform: translateX(0); }
         }
 
-        .order-item-name {
-            font-weight: 600;
-            color: #333;
-        }
+        .order-item-name  { font-weight: 600; color: var(--fg); }
+        .order-item-price { font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
 
-        .order-item-price {
-            color: #568203;
-            font-weight: bold;
+        .order-item-desc-line {
+            font-size: .82rem;
+            color: var(--fg-muted);
+            padding: 6px 14px 0;
         }
 
         .order-totals {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid #FFD700;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid var(--hairline);
         }
 
         .total-line {
             display: flex;
             justify-content: space-between;
-            padding: 5px 10px;
-            font-size: 1.1rem;
+            padding: 6px 4px;
+            font-size: .95rem;
+            color: var(--fg-muted);
+            font-variant-numeric: tabular-nums;
         }
 
         .total-line.final {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #C1272D;
-            background: #FFD700;
-            border-radius: 8px;
             margin-top: 10px;
+            padding: 12px 14px;
+            border-radius: var(--r-sm);
+            background: var(--primary-soft);
+            border: 1px solid rgba(183, 217, 60, .28);
+            color: var(--primary);
+            font-size: 1.15rem;
+            font-weight: 800;
         }
 
-        #status {
-            padding: 15px;
-            border-radius: 8px;
+        .order-number-display {
+            padding: 20px;
+            border-radius: var(--r-lg);
+            border: 1px solid rgba(245, 200, 66, .35);
+            background: var(--accent-soft);
+            color: var(--accent);
             text-align: center;
-            font-weight: 600;
-            margin-bottom: 10px;
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: .02em;
+            animation: order-glow 2.4s ease-in-out infinite;
         }
 
-        .status-greeting {
-            background: #E8F5E9;
-            color: #2E7D32;
+        @keyframes order-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 200, 66, .00); }
+            50%      { box-shadow: 0 0 26px -4px rgba(245, 200, 66, .45); }
         }
 
-        .status-ordering {
-            background: #FFF3E0;
-            color: #E65100;
-        }
+        .order-complete { text-align: center; padding: 20px; }
+        .order-complete h2 { font-family: var(--font-display); color: var(--primary); margin-bottom: 8px; }
+        .order-complete-number { font-size: 1.4rem; font-weight: 800; color: var(--accent); }
 
-        .status-confirming {
-            background: #E3F2FD;
-            color: #1565C0;
-        }
-
-        .status-payment {
-            background: #FFD700;
-            color: #333;
-        }
-
-        /* Two-column layout for menu categories */
+        /* =====================================================================
+           Menu board
+           ===================================================================== */
         #menu-display {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 16px;
         }
-        
+
         .menu-category {
-            background: #FFF8DC;
-            border-radius: 8px;
-            padding: 8px;
+            border: 1px solid var(--hairline);
+            border-radius: var(--r-md);
+            background: var(--surface-2);
+            padding: 12px 14px 6px;
         }
-        
+
         .menu-category-title {
-            font-weight: bold;
-            color: #C1272D;
-            font-size: 1rem;
-            margin-bottom: 5px;
-            padding-bottom: 3px;
-            border-bottom: 1px solid #FFD700;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: .82rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--primary);
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid var(--hairline);
         }
 
-        .menu-section {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 2px;
-            margin-top: 3px;
-        }
+        .menu-section { display: flex; flex-direction: column; }
 
+        /* Rows separated by hairlines rather than boxed individually — that's
+           how the board reads in the artwork, and it's far quieter. */
         .menu-item {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding: 4px 8px;
-            background: white;
-            border-radius: 4px;
-            border: 1px solid #E5E5E5;
-            transition: all 0.2s;
-            margin-bottom: 2px;
+            gap: 12px;
+            padding: 9px 8px;
+            margin: 0 -8px;
+            border-radius: var(--r-sm);
+            border-bottom: 1px solid var(--hairline);
+            transition: background .18s, box-shadow .18s;
         }
 
+        .menu-section .menu-item:last-child { border-bottom: none; }
+
         .menu-item:hover {
-            border-color: #568203;
-            background: #F9FFF5;
-            transform: translateX(3px);
+            background: var(--primary-soft);
+            box-shadow: inset 3px 0 0 var(--primary);
         }
 
         .menu-item-name {
             font-weight: 600;
-            color: #333;
-            font-size: 0.85rem;
-            margin-bottom: 1px;
+            font-size: .9rem;
+            color: var(--fg);
         }
-        
+
         .menu-item-desc {
-            color: #666;
-            font-size: 0.7rem;
-            line-height: 1.1;
+            color: var(--fg-muted);
+            font-size: .76rem;
+            line-height: 1.35;
+            margin-top: 2px;
         }
 
         .menu-item-price {
-            color: #568203;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: .92rem;
+            color: var(--fg);
             white-space: nowrap;
-            margin-left: 8px;
+            font-variant-numeric: tabular-nums;
         }
-        
-        /* Responsive: single column on small screens */
-        @media (max-width: 768px) {
-            #menu-display {
-                grid-template-columns: 1fr;
-            }
+
+        /* =====================================================================
+           Controls: disclosure, checkboxes, selects
+           ===================================================================== */
+
+        /* Recording/AI disclosure. Deliberately legible rather than fine print —
+           consent obtained via a dark pattern is worth little. */
+        .recording-notice {
+            font-size: .84rem;
+            line-height: 1.45;
+            color: var(--fg-muted);
+            background: var(--danger-soft);
+            border: 1px solid var(--danger-line);
+            border-left: 3px solid var(--danger);
+            border-radius: var(--r-sm);
+            padding: 10px 12px;
+            margin-bottom: 16px;
+        }
+        .recording-notice strong { color: var(--fg); }
+
+        .control-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 20px;
+            margin-top: 16px;
+        }
+
+        .check {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .9rem;
+            color: var(--fg-muted);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .check:hover { color: var(--fg); }
+
+        /* Custom checkbox — the native control renders as a bright white square
+           on the dark board and is the one thing that refuses to theme. */
+        .check input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 17px;
+            height: 17px;
+            flex: none;
+            display: grid;
+            place-content: center;
+            border: 1px solid var(--border-strong);
+            border-radius: 5px;
+            background: var(--surface-2);
+            cursor: pointer;
+            transition: background .15s, border-color .15s;
+        }
+
+        .check input[type="checkbox"]::after {
+            content: '';
+            width: 11px;
+            height: 11px;
+            background-color: var(--primary-ink);
+            -webkit-mask: var(--tick) center / contain no-repeat;
+            mask: var(--tick) center / contain no-repeat;
+            transform: scale(0);
+            transition: transform .15s ease;
+        }
+
+        .check input[type="checkbox"]:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .check input[type="checkbox"]:checked::after { transform: scale(1); }
+
+        .check:hover input[type="checkbox"]:not(:checked) { border-color: var(--primary); }
+
+        .field {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .field-label {
+            font-size: .88rem;
+            font-weight: 600;
+            color: var(--fg-muted);
+            white-space: nowrap;
+        }
+
+        /* Custom select: native chevron replaced by a masked one so it picks up
+           the theme's text colour automatically. */
+        .select {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .select::after {
+            content: '';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            width: 10px;
+            height: 10px;
+            transform: translateY(-50%);
+            background-color: var(--fg-muted);
+            -webkit-mask: var(--chevron) center / contain no-repeat;
+            mask: var(--chevron) center / contain no-repeat;
+            pointer-events: none;
+        }
+
+        .select select {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            padding: 9px 32px 9px 12px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--fg);
+            font-family: inherit;
+            font-size: .88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color .18s, background .18s;
+        }
+
+        .select select:hover { border-color: var(--border-strong); background: var(--surface-3); }
+
+        /* Native option popups inherit the light `color` from a dark select on
+           some platforms; pin both so the list stays readable. */
+        .select select option,
+        .select select optgroup {
+            background: var(--surface-2);
+            color: var(--fg);
+        }
+
+        /* =====================================================================
+           Event log + result toast
+           ===================================================================== */
+        #event-log {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: var(--r-md);
+            border: 1px solid var(--hairline);
+            background: var(--surface-2);
+            font-size: .85rem;
+        }
+
+        .event-entry {
+            padding: 6px 0 6px 10px;
+            margin-bottom: 6px;
+            border-left: 2px solid var(--hairline);
+        }
+
+        .event-entry.user-event {
+            border-left-color: var(--primary);
+            background: var(--primary-soft);
+            border-radius: 0 var(--r-sm) var(--r-sm) 0;
+        }
+
+        .event-time { color: var(--fg-subtle); font-size: .75rem; }
+        .event-json {
+            color: var(--fg-subtle);
+            font-family: var(--font-mono);
+            font-size: .74rem;
+            margin-left: 10px;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         #result-message {
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
-            background: #568203;
-            color: white;
-            padding: 20px 40px;
-            border-radius: 15px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: translate(-50%, -50%) scale(.96);
+            z-index: 1000;
+            padding: 20px 36px;
+            border-radius: var(--r-lg);
+            border: 1px solid rgba(183, 217, 60, .35);
+            background: var(--surface);
+            color: var(--primary);
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-align: center;
+            box-shadow: var(--shadow-3);
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 1000;
+            transition: opacity .25s, transform .25s;
         }
 
-        #result-message.show {
-            opacity: 1;
-        }
+        #result-message.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
-        .order-number-display {
-            background: #FFD700;
-            color: #333;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin: 20px 0;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        #event-log {
-            max-height: 600px;
-            overflow-y: auto;
-            font-size: 0.9rem;
-            background: #f5f5f5;
-            border-radius: 8px;
-            padding: 10px;
-        }
-
-        .event-entry {
-            padding: 5px;
-            margin-bottom: 5px;
-            border-left: 3px solid #ccc;
-            padding-left: 10px;
-        }
-
-        .event-entry.user-event {
-            border-color: #568203;
-            background: #E8F5E9;
-        }
-
+        /* =====================================================================
+           Responsive
+           ===================================================================== */
         @media (max-width: 1200px) {
             .main-container {
-                flex-direction: column;
-                align-items: center;
+                grid-template-columns: minmax(0, 1fr);
+                justify-items: center;
             }
-            
-            .left-panel {
-                width: 100%;
-                max-width: 810px;
-            }
-
-            .right-panel {
-                width: 100%;
-                max-width: 810px;
-            }
-            
-            #video-container {
-                max-width: 100%;
-            }
+            .left-panel, .right-panel { width: 100%; max-width: 860px; }
         }
-        
+
         @media (max-width: 768px) {
-            .github-link {
-                top: 10px;
-                right: 10px;
-                padding: 8px 12px;
-                font-size: 0.85rem;
-            }
+            .site-header { padding: 12px 16px; gap: 10px; }
+            .brand-mark { width: 32px; height: 32px; }
+            .brand-text h1 { font-size: 1.2rem; }
+            .brand-text p { font-size: .7rem; letter-spacing: .06em; }
+            .github-link { padding: 8px 12px; font-size: .8rem; }
+            .github-link span { display: none; }
 
-            .github-link svg {
-                width: 16px;
-                height: 16px;
-            }
+            .main-container { padding: 16px 14px 40px; gap: 16px; }
 
-            .roof-title h1 {
-                font-size: 1.5rem;
-            }
+            /* Merge the two panels into one column and re-order for mobile. */
+            .left-panel, .right-panel { display: contents; }
 
-            .roof-title p {
-                font-size: 0.9rem;
-            }
-            
-            .main-container {
-                padding: 10px;
-                padding-top: 110px;
-                display: flex;
-                flex-direction: column;
-            }
-            
-            /* Merge panels into single column */
-            .left-panel,
-            .right-panel {
-                width: 100%;
-                max-width: none;
-                display: contents; /* Remove panel wrapper, let children flow */
-            }
-            
-            /* Order elements for mobile */
-            #video-container {
-                order: 1;
-                margin-bottom: 20px;
-                max-height: 60vh; /* Limit video height on mobile */
-            }
-            
-            #status {
-                order: 2;
-            }
-            
-            #controls-card {
-                order: 3;
-            }
-            
-            #order-display {
-                order: 4;
-            }
-            
-            #order-number {
-                order: 5;
-            }
-            
-            #menu-card {
-                order: 6;
-                width: 100%; /* Full width on mobile */
-            }
-            
-            #event-log-container {
-                order: 7;
-            }
-            
-            /* Make all cards full width on mobile */
-            .card {
-                width: 100%;
-            }
-            
-        }
-        /* ---------------------------------------------------------------------
-           Muted/subtle text tokens. These replace hardcoded inline greys
-           (#999/#666/#888) that couldn't be restyled per theme and failed
-           contrast (the #999 order placeholder failed even in classic).
-           Each theme overrides these two values; everything below inherits.
-           --------------------------------------------------------------------- */
-        :root {
-            --fg-muted:  #5a5a5a;   /* descriptions, timestamps  (>=4.5:1 on white) */
-            --fg-subtle: #6b6b6b;   /* JSON dumps, de-emphasized */
-        }
+            #video-container    { order: 1; }
+            #status             { order: 2; }
+            #controls-card      { order: 3; }
+            #order-display      { order: 4; }
+            #order-number       { order: 5; }
+            #menu-card          { order: 6; }
+            #event-log-container{ order: 7; }
 
-        .order-empty {
-            text-align: center;
-            color: var(--fg-muted);
-            padding: 50px;
-        }
-
-        .order-item-row { margin-bottom: 12px; }
-
-        .order-item-desc-line {
-            font-size: 0.85rem;
-            color: var(--fg-muted);
-            padding: 0 10px;
-            margin-top: -5px;
-        }
-
-        .event-time { color: var(--fg-muted); font-size: 0.8rem; }
-        .event-json { color: var(--fg-subtle); margin-left: 10px; font-size: 0.8rem; white-space: pre-wrap; }
-
-        /* Recording/AI disclosure. Deliberately legible rather than fine print -
-           consent obtained via a dark pattern is worth little. */
-        .recording-notice {
-            font-size: 0.82rem;
-            line-height: 1.35;
-            color: var(--fg-muted);
-            background: rgba(193, 39, 45, 0.07);
-            border-left: 3px solid #C1272D;
-            border-radius: 6px;
-            padding: 8px 10px;
-            margin-bottom: 12px;
-        }
-        .recording-notice strong { color: inherit; }
-
-        /* Start Ordering glow, in Sigmond's eye colour (#88D8F8 - sampled from
-           the artwork: the robot's eyes sit at H197, very bright cyan).
-           Applies in every theme; the cyan ties the CTA to the character. */
-        #connectBtn {
-            --sigmond-eye: 136, 216, 248;   /* #88D8F8 */
-            box-shadow:
-                0 0 14px rgba(var(--sigmond-eye), 0.55),
-                0 0 34px rgba(var(--sigmond-eye), 0.28);
-            animation: sigmond-pulse 2.6s ease-in-out infinite;
-        }
-
-        #connectBtn:hover:not(:disabled) {
-            box-shadow:
-                0 0 20px rgba(var(--sigmond-eye), 0.85),
-                0 0 48px rgba(var(--sigmond-eye), 0.45);
-            animation: none;   /* hold steady while hovered */
-        }
-
-        /* No glow once it's disabled (connecting / in-call) - the button is
-           inert then and a pulsing CTA would be misleading. */
-        #connectBtn:disabled {
-            box-shadow: none;
-            animation: none;
-        }
-
-        @keyframes sigmond-pulse {
-            0%, 100% {
-                box-shadow:
-                    0 0 12px rgba(var(--sigmond-eye), 0.45),
-                    0 0 28px rgba(var(--sigmond-eye), 0.20);
-            }
-            50% {
-                box-shadow:
-                    0 0 18px rgba(var(--sigmond-eye), 0.75),
-                    0 0 44px rgba(var(--sigmond-eye), 0.38);
-            }
+            .card, #status, .order-number-display { width: 100%; }
+            #menu-display { grid-template-columns: 1fr; }
         }
 
         /* Respect users who don't want motion. */
         @media (prefers-reduced-motion: reduce) {
-            #connectBtn { animation: none; }
+            *, *::before, *::after {
+                animation: none !important;
+                transition-duration: .01ms !important;
+            }
         }
 
-        .order-complete { text-align: center; padding: 20px; }
-        .order-complete h2 { color: #2E7D32; }
-        .order-complete-number { font-size: 24px; font-weight: bold; }
-
         /* =====================================================================
-           THEME: "Fresh" — Material 3 style, seeded on the new artwork palette
-           (avocado green + warm gold/olive + neutral surfaces). Applied when
-           <html data-theme="modern">. Classic theme = no attribute (styles above).
+           THEME: "Fresh" — the same artwork palette in daylight. Warm cream
+           paper, white boards, deep-olive ink. Applied on data-theme="modern".
            ===================================================================== */
-        /* Palette sampled from the artwork: olive/chartreuse guacamole greens
-           (H60–75, e.g. #778533), warm amber-gold accents (#CFAA2A / #F7CF60),
-           warm near-black (#17150D) and silver metal. Built into an M3 scheme. */
         html[data-theme="modern"] {
-            --md-primary:            #576916;   /* olive-avocado green (from #778533) */
-            --md-on-primary:         #ffffff;
-            --md-primary-container:  #dbf18f;   /* light chartreuse */
-            --md-on-primary-container:#181e00;
-            --md-tertiary:           #6d5e00;   /* amber-gold (from #CFAA2A) */
-            --md-tertiary-container: #f8e187;   /* warm gold (from #F7CF60) */
-            --md-on-tertiary-container:#221b00;
-            --md-error:              #ba1a1a;
-            --md-on-error:           #ffffff;
-            --md-bg:                 #fdfbef;   /* warm cream (image's gold ambiance) */
-            --md-surface:            #fffdf3;
-            --md-surface-container:  #f2f0e1;
-            --md-surface-variant:    #e5e3d1;   /* warm neutral-variant */
-            --md-on-surface:         #1b1c13;   /* warm near-black (from #17150D) */
-            --md-on-surface-variant: #47493a;
-            --md-outline:            #787a67;
-            --md-outline-variant:    #c9c8b3;
-            --md-elev1: 0 1px 2px rgba(0,0,0,.30), 0 1px 3px 1px rgba(0,0,0,.15);
-            --md-elev2: 0 1px 2px rgba(0,0,0,.30), 0 2px 6px 2px rgba(0,0,0,.15);
-            --md-font: "Google Sans", Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+            color-scheme: light;
+
+            --bg:            #FAF8EC;
+            --surface:       #FFFFFF;
+            --surface-2:     #F5F3E2;
+            --surface-3:     #EAE8D2;
+            --hairline:      rgba(56, 70, 15, .12);
+            --border:        rgba(56, 70, 15, .18);
+            --border-strong: rgba(56, 70, 15, .34);
+
+            --fg:            #1B1F10;
+            --fg-muted:      #55603C;   /* 6.9:1 on cream */
+            --fg-subtle:     #6B7550;   /* 4.9:1 on cream */
+
+            --primary:       #4E6018;   /* deep olive — fills carry white text */
+            --primary-ink:   #FFFFFF;
+            --primary-soft:  rgba(78, 96, 24, .10);
+            --primary-line:  rgba(78, 96, 24, .28);
+            --accent:        #7A5D00;   /* gold, darkened for text contrast     */
+            --accent-soft:   rgba(245, 200, 66, .22);
+            --accent-line:   rgba(122, 93, 0, .30);
+            --info:          #0A5C7A;
+            --info-soft:     rgba(92, 200, 245, .18);
+            --info-line:     rgba(10, 92, 122, .28);
+            --danger:        #A63A22;
+            --danger-ink:    #FFFFFF;
+            --danger-soft:   rgba(196, 71, 46, .10);
+            --danger-line:   rgba(166, 58, 34, .24);
+
+            --page-wash:
+                radial-gradient(1100px 560px at 50% -200px, rgba(183, 217, 60, .34), transparent 70%),
+                radial-gradient(700px 400px at 90% 4%,      rgba(245, 200, 66, .26), transparent 68%);
+
+            --shadow-1: 0 1px 2px rgba(38, 46, 12, .10);
+            --shadow-2: 0 10px 26px -14px rgba(38, 46, 12, .34), 0 1px 3px rgba(38, 46, 12, .08);
+            --shadow-3: 0 22px 50px -22px rgba(38, 46, 12, .40);
+            --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px var(--primary);
         }
 
-        html[data-theme="modern"] body {
-            background: var(--md-bg);
-            color: var(--md-on-surface);
-            font-family: var(--md-font);
+        /* Same wall, lit for daytime: pale olive plaster instead of shadowed
+           green, so the dark-glass chip becomes a light one. */
+        html[data-theme="modern"] .site-header {
+            background:
+                radial-gradient(680px 260px at 10% -40%,  rgba(255, 226, 150, .55), transparent 72%),
+                radial-gradient(900px 300px at 100% 130%, rgba(56, 70, 15, .16),    transparent 70%),
+                linear-gradient(180deg, #E9EDC4 0%, #DDE4AE 58%, #CFD99A 100%);
+        }
+        html[data-theme="modern"] .site-header::before { mix-blend-mode: multiply; opacity: .22; }
+        html[data-theme="modern"] .brand-text h1 {
+            color: #3F5010;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, .5);
+        }
+        html[data-theme="modern"] .brand-text p {
+            color: #4A5722;
+            text-shadow: none;
+        }
+        html[data-theme="modern"] .github-link {
+            background: rgba(255, 255, 255, .78);
+            border-color: rgba(56, 70, 15, .22);
+            color: #1B1F10;
+        }
+        html[data-theme="modern"] .github-link:hover {
+            background: #FFFFFF;
+            border-color: rgba(56, 70, 15, .40);
         }
 
-        /* Top app bar — flat surface with a hairline divider, no roof tiles */
-        html[data-theme="modern"] .roof-tiles {
-            background: var(--md-surface);
-            box-shadow: var(--md-elev1);
-            border-bottom: 1px solid var(--md-outline-variant);
+        /* The lime CTA glow is a dark-theme effect; on paper a plain shadow reads
+           better than a neon halo. */
+        html[data-theme="modern"] #connectBtn {
+            box-shadow: var(--shadow-2);
+            animation: none;
         }
-        html[data-theme="modern"] .roof-tiles::before,
-        html[data-theme="modern"] .roof-tiles::after { content: none; }
-        html[data-theme="modern"] .roof-title { text-shadow: none; }
-        html[data-theme="modern"] .roof-title h1 { color: var(--md-on-surface); font-weight: 500; }
-        html[data-theme="modern"] .roof-title p  { color: var(--md-on-surface-variant); }
-
-        /* Cards — rounded, soft elevation, no gold underline */
-        html[data-theme="modern"] .card {
-            background: var(--md-surface);
-            border: 1px solid var(--md-outline-variant);
-            border-radius: 20px;
-            box-shadow: var(--md-elev1);
+        html[data-theme="modern"] #connectBtn:hover:not(:disabled) {
+            box-shadow: 0 6px 18px -6px rgba(78, 96, 24, .55);
         }
-        html[data-theme="modern"] .card-title {
-            color: var(--md-on-surface);
-            font-weight: 500;
-            border-bottom: 1px solid var(--md-outline-variant);
-        }
-
-        /* Buttons — filled pill, Material state layer (no lift transform) */
-        html[data-theme="modern"] button {
-            background: var(--md-primary);
-            color: var(--md-on-primary);
-            border-radius: 999px;
-            font-weight: 500;
-            letter-spacing: .1px;
-            box-shadow: none;
-            transition: box-shadow .2s, background .2s, filter .2s;
-        }
-        html[data-theme="modern"] button:hover {
-            background: var(--md-primary);
-            filter: brightness(1.08);
-            box-shadow: var(--md-elev1);
-            transform: none;
-        }
-        html[data-theme="modern"] button:disabled {
-            background: rgba(27,28,22,.12);
-            color: rgba(27,28,22,.38);
-            box-shadow: none;
-        }
-        html[data-theme="modern"] button.danger { background: var(--md-error); color: var(--md-on-error); }
-        html[data-theme="modern"] button.danger:hover { background: var(--md-error); filter: brightness(1.08); }
-
-        /* Video frame */
-        html[data-theme="modern"] #video-container {
-            background: var(--md-surface-container);
-            border: 1px solid var(--md-outline-variant);
-            box-shadow: var(--md-elev1);
-        }
-
-        /* Status chips — tonal */
-        html[data-theme="modern"] .status-greeting  { background: var(--md-primary-container);  color: var(--md-on-primary-container); }
-        html[data-theme="modern"] .status-ordering   { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
-        html[data-theme="modern"] .status-confirming { background: var(--md-surface-variant);    color: var(--md-on-surface); }
-        html[data-theme="modern"] .status-payment    { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
-
-        /* Order list */
-        html[data-theme="modern"] .order-item { background: var(--md-surface-container); }
-        html[data-theme="modern"] .order-item-name  { color: var(--md-on-surface); }
-        html[data-theme="modern"] .order-item-price { color: var(--md-primary); }
-        html[data-theme="modern"] .order-totals { border-top: 1px solid var(--md-outline-variant); }
-        html[data-theme="modern"] .total-line.final {
-            background: var(--md-primary-container);
-            color: var(--md-on-primary-container);
-        }
-        html[data-theme="modern"] .order-number-display {
-            background: var(--md-tertiary-container);
-            color: var(--md-on-tertiary-container);
-        }
-
-        /* Menu */
-        html[data-theme="modern"] .menu-category { background: var(--md-surface-container); }
-        html[data-theme="modern"] .menu-category-title { color: var(--md-primary); border-bottom: 1px solid var(--md-outline-variant); }
-        html[data-theme="modern"] .menu-item { background: var(--md-surface); border: 1px solid var(--md-outline-variant); }
-        html[data-theme="modern"] .menu-item:hover { border-color: var(--md-primary); background: var(--md-primary-container); }
-        html[data-theme="modern"] .menu-item-name  { color: var(--md-on-surface); }
-        html[data-theme="modern"] .menu-item-desc  { color: var(--md-on-surface-variant); }
-        html[data-theme="modern"] .menu-item-price { color: var(--md-primary); }
-
-        /* Selects (voice + theme) */
-        html[data-theme="modern"] select {
-            border: 1px solid var(--md-outline) !important;
-            background: var(--md-surface);
-            color: var(--md-on-surface);
-        }
-
-        /* GitHub chip + result toast */
-        html[data-theme="modern"] .github-link { background: var(--md-surface); color: var(--md-on-surface); box-shadow: var(--md-elev1); }
-        html[data-theme="modern"] .github-link svg { fill: var(--md-on-surface); }
-        html[data-theme="modern"] #result-message { background: var(--md-primary); color: var(--md-on-primary); }
-        html[data-theme="modern"] #event-log { background: var(--md-surface-container); }
-        html[data-theme="modern"] {
-            --fg-muted:  #47493a;   /* = --md-on-surface-variant */
-            --fg-subtle: #5a5c4c;
-        }
-        html[data-theme="modern"] .order-complete h2 { color: var(--md-primary); }
-        html[data-theme="modern"] .recording-notice {
-            background: var(--md-surface-container);
-            border-left-color: var(--md-error);
-        }
-        html[data-theme="modern"] .event-entry { border-left-color: var(--md-outline-variant); }
-        html[data-theme="modern"] .event-entry.user-event {
-            background: var(--md-primary-container);
-            border-color: var(--md-primary);
-            color: var(--md-on-primary-container);
-        }
+        html[data-theme="modern"] .order-number-display { animation: none; box-shadow: var(--shadow-1); }
+        html[data-theme="modern"] .menu-item-price { color: var(--primary); }
+        html[data-theme="modern"] #status::before { box-shadow: none; }
 
         /* =====================================================================
-           THEME: "SignalWire" — official brand palette from the SignalWire
-           design system (DTCG tokens). Dark surfaces, blue fills, turquoise
-           emphasis text, purple→fuchsia gradient accents. Brand rules honored:
-           blue (#044EF4) = fills only (never text on dark); turquoise = emphasis
-           text; fuchsia/purple = fills & gradients; gold = warnings.
+           THEME: "SignalWire" — official brand palette (DTCG tokens). Brand
+           rules honored: blue (#044EF4) = fills only (never text on dark);
+           turquoise = emphasis text; fuchsia/purple = fills & gradients;
+           gold = warnings.
            ===================================================================== */
         html[data-theme="signalwire"] {
-            --sw-blue:       #044EF4;
-            --sw-fuchsia:    #F72A72;
-            --sw-turquoise:  #40E0D0;
-            --sw-gold:       #FFD700;
-            --sw-purple:     #601BE6;
-            --sw-page:       #0e0e18;
-            --sw-surface:    #181a28;
-            --sw-raised:     #222436;
-            --sw-fg:         #f0f0f4;
-            --sw-fg-muted:   #a0a0aa;
-            --sw-fg-subtle:  #73737e;
-            --sw-hairline:   rgba(255,255,255,.09);
-            --sw-grad:       linear-gradient(90deg, #044EF4 0%, #601BE6 50%, #F72A72 100%);
-            --sw-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color-scheme: dark;
+
+            --sw-blue:      #044EF4;
+            --sw-fuchsia:   #F72A72;
+            --sw-turquoise: #40E0D0;
+            --sw-gold:      #FFD700;
+            --sw-purple:    #601BE6;
+            --sw-grad:      linear-gradient(90deg, #044EF4 0%, #601BE6 50%, #F72A72 100%);
+
+            --bg:            #0B0B14;
+            --surface:       #181A28;
+            --surface-2:     #222436;
+            --surface-3:     #2C2F45;
+            --hairline:      rgba(255, 255, 255, .08);
+            --border:        rgba(255, 255, 255, .13);
+            --border-strong: rgba(255, 255, 255, .26);
+
+            --fg:            #F0F0F4;
+            --fg-muted:      #A6A6B2;
+            --fg-subtle:     #8C8C99;
+
+            --primary:       var(--sw-turquoise);   /* emphasis text + accents */
+            --primary-ink:   #FFFFFF;
+            --primary-soft:  rgba(64, 224, 208, .12);
+            --primary-line:  rgba(64, 224, 208, .28);
+            --accent:        var(--sw-gold);
+            --accent-soft:   rgba(255, 215, 0, .12);
+            --accent-line:   rgba(255, 215, 0, .28);
+            --info:          #8FB0FF;
+            --info-soft:     rgba(4, 78, 244, .18);
+            --info-line:     rgba(4, 78, 244, .40);
+            --danger:        var(--sw-fuchsia);
+            --danger-ink:    #FFFFFF;
+            --danger-soft:   rgba(247, 42, 114, .12);
+            --danger-line:   rgba(247, 42, 114, .28);
+
+            --page-wash:
+                radial-gradient(1100px 560px at 50% -200px, rgba(4, 78, 244, .28), transparent 70%),
+                radial-gradient(720px 420px at 88% 6%,      rgba(96, 27, 230, .20), transparent 68%);
+
+            --r-lg: 14px;
+            --r-xl: 18px;
+            --r-pill: 8px;                          /* brand uses square-ish UI */
+            --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            --font-display: var(--font);
         }
 
-        html[data-theme="signalwire"] body {
-            background: var(--sw-page);
-            color: var(--sw-fg);
-            font-family: var(--sw-font);
+        /* Flat brand surface — no restaurant wall here — with the signature
+           gradient as the base rule. */
+        html[data-theme="signalwire"] .site-header {
+            background: linear-gradient(180deg, var(--surface), var(--bg));
         }
-
-        /* Top app bar — dark surface with the brand gradient as the base rule */
-        html[data-theme="signalwire"] .roof-tiles {
-            background: var(--sw-surface);
-            box-shadow: none;
-            border-bottom: 1px solid var(--sw-hairline);
-        }
-        html[data-theme="signalwire"] .roof-tiles::before { content: none; }
-        html[data-theme="signalwire"] .roof-tiles::after {
-            content: '';
-            height: 3px;
+        html[data-theme="signalwire"] .site-header::before { opacity: .35; }
+        html[data-theme="signalwire"] .site-header::after {
             background: var(--sw-grad);
             opacity: 1;
+            height: 3px;
         }
-        html[data-theme="signalwire"] .roof-title { text-shadow: none; }
-        html[data-theme="signalwire"] .roof-title h1 { color: var(--sw-fg); font-weight: 600; }
-        html[data-theme="signalwire"] .roof-title p  { color: var(--sw-fg-muted); }
-
-        /* Cards — dark surface, hairline border, turquoise section titles */
-        html[data-theme="signalwire"] .card {
-            background: var(--sw-surface);
-            border: 1px solid var(--sw-hairline);
-            border-radius: 14px;
-            box-shadow: 0 8px 24px rgba(0,0,0,.35);
+        html[data-theme="signalwire"] .brand-text h1 { color: var(--fg); text-shadow: none; }
+        html[data-theme="signalwire"] .brand-text p  { color: var(--fg-muted); text-shadow: none; }
+        html[data-theme="signalwire"] .github-link {
+            background: var(--surface-2);
+            border-color: var(--border);
         }
-        html[data-theme="signalwire"] .card-title {
-            color: var(--sw-turquoise);
-            font-weight: 600;
-            border-bottom: 1px solid var(--sw-hairline);
+        html[data-theme="signalwire"] .github-link:hover {
+            background: var(--surface-3);
+            border-color: var(--border-strong);
         }
 
-        /* Buttons — brand blue fill (fills-only rule), fuchsia for danger */
-        html[data-theme="signalwire"] button {
+        /* Buttons are brand-blue fills (fills-only rule); turquoise stays text.
+           :not(.danger) matters — this selector outranks the base `button.danger`
+           rule, so without it End Call would come out blue. */
+        html[data-theme="signalwire"] button:not(.danger) {
             background: var(--sw-blue);
             color: #fff;
-            border-radius: 8px;
-            font-weight: 600;
-            box-shadow: none;
-            transition: filter .2s, box-shadow .2s, transform .2s;
         }
-        html[data-theme="signalwire"] button:hover {
-            background: var(--sw-blue);
-            filter: brightness(1.12);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(4,78,244,.45);
+        html[data-theme="signalwire"] button:disabled { background: var(--surface-3); color: var(--fg-subtle); }
+        html[data-theme="signalwire"] #connectBtn {
+            box-shadow: 0 6px 20px -6px rgba(4, 78, 244, .70);
+            animation: none;
         }
-        html[data-theme="signalwire"] button:disabled {
-            background: #2a2c3d;
-            color: var(--sw-fg-subtle);
-            box-shadow: none;
-            transform: none;
+        html[data-theme="signalwire"] #connectBtn:hover:not(:disabled) {
+            box-shadow: 0 8px 26px -6px rgba(4, 78, 244, .90);
         }
-        html[data-theme="signalwire"] button.danger { background: var(--sw-fuchsia); }
-        html[data-theme="signalwire"] button.danger:hover { background: var(--sw-fuchsia); filter: brightness(1.1); box-shadow: 0 6px 18px rgba(247,42,114,.45); }
-
-        /* Video frame */
-        html[data-theme="signalwire"] #video-container {
-            background: var(--sw-raised);
-            border: 1px solid var(--sw-hairline);
-            box-shadow: 0 8px 24px rgba(0,0,0,.35);
+        html[data-theme="signalwire"] .menu-item:hover { box-shadow: inset 3px 0 0 var(--sw-blue); }
+        html[data-theme="signalwire"] .order-number-display {
+            background: var(--sw-grad);
+            border-color: transparent;
+            color: #fff;
+            animation: none;
         }
-
-        /* Status chips — tonal brand tints, emphasis text */
-        html[data-theme="signalwire"] .status-greeting  { background: rgba(64,224,208,.14); color: var(--sw-turquoise); }
-        html[data-theme="signalwire"] .status-ordering   { background: rgba(96,27,230,.20);  color: #c8b4ff; }
-        html[data-theme="signalwire"] .status-confirming { background: rgba(4,78,244,.20);   color: #8fb0ff; }
-        html[data-theme="signalwire"] .status-payment    { background: rgba(255,215,0,.14);  color: var(--sw-gold); }
-
-        /* Order list */
-        html[data-theme="signalwire"] .order-item { background: var(--sw-raised); }
-        html[data-theme="signalwire"] .order-item-name  { color: var(--sw-fg); }
-        html[data-theme="signalwire"] .order-item-price { color: var(--sw-turquoise); }
-        html[data-theme="signalwire"] .order-totals { border-top: 1px solid var(--sw-hairline); }
-        html[data-theme="signalwire"] .total-line.final { background: rgba(4,78,244,.16); color: var(--sw-turquoise); }
-        html[data-theme="signalwire"] .order-number-display { background: var(--sw-grad); color: #fff; }
-
-        /* Menu */
-        html[data-theme="signalwire"] .menu-category { background: var(--sw-raised); }
-        html[data-theme="signalwire"] .menu-category-title { color: var(--sw-turquoise); border-bottom: 1px solid var(--sw-hairline); }
-        html[data-theme="signalwire"] .menu-item { background: var(--sw-surface); border: 1px solid var(--sw-hairline); }
-        html[data-theme="signalwire"] .menu-item:hover { border-color: var(--sw-blue); background: rgba(4,78,244,.12); transform: translateX(3px); }
-        html[data-theme="signalwire"] .menu-item-name  { color: var(--sw-fg); }
-        html[data-theme="signalwire"] .menu-item-desc  { color: var(--sw-fg-muted); }
-        html[data-theme="signalwire"] .menu-item-price { color: var(--sw-turquoise); }
-
-        /* Selects, github chip, toast, log */
-        html[data-theme="signalwire"] select {
-            border: 1px solid rgba(255,255,255,.24) !important;
-            background: var(--sw-raised);
-            color: var(--sw-fg);
+        html[data-theme="signalwire"] .total-line.final {
+            background: rgba(4, 78, 244, .18);
+            border-color: rgba(4, 78, 244, .40);
+            color: var(--sw-turquoise);
         }
-        html[data-theme="signalwire"] .github-link { background: var(--sw-raised); color: var(--sw-fg); box-shadow: none; border: 1px solid var(--sw-hairline); }
-        html[data-theme="signalwire"] .github-link svg { fill: var(--sw-fg); }
-        html[data-theme="signalwire"] #result-message { background: var(--sw-grad); color: #fff; }
-        html[data-theme="signalwire"] #event-log { background: var(--sw-raised); }
-
-        /* Dark-theme text tokens + event log. The base .user-event pill is a
-           light green with no override, which put near-white text on pale green
-           (~1.06:1) - every order event was invisible in this theme. */
-        html[data-theme="signalwire"] {
-            --fg-muted:  #a0a0aa;   /* = --sw-fg-muted */
-            --fg-subtle: #8f8f9a;
+        html[data-theme="signalwire"] #result-message {
+            background: var(--sw-grad);
+            border-color: transparent;
+            color: #fff;
         }
-        html[data-theme="signalwire"] .order-complete h2 { color: var(--sw-turquoise); }
-        html[data-theme="signalwire"] .recording-notice {
-            background: rgba(247, 42, 114, .10);
-            border-left-color: var(--sw-fuchsia);
-            color: var(--sw-fg-muted);
-        }
-        html[data-theme="signalwire"] .event-entry { border-left-color: var(--sw-hairline); }
-        html[data-theme="signalwire"] .event-entry.user-event {
-            background: rgba(64, 224, 208, .12);
-            border-color: var(--sw-turquoise);
-            color: var(--sw-fg);
-        }
-        /* Native option popups inherit the light `color` from the dark select on
-           some platforms; pin both so the list stays readable. */
-        html[data-theme="signalwire"] select option,
-        html[data-theme="signalwire"] select optgroup {
-            background: var(--sw-raised);
-            color: var(--sw-fg);
-        }
-
     </style>
 </head>
 <body>
-    <a href="https://github.com/signalwire-demos/holyguacamole" target="_blank" rel="noopener noreferrer" class="github-link">
-        <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-            <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
-        </svg>
-        View on GitHub
-    </a>
-
-    <div class="roof-tiles">
-        <div class="roof-title">
-            <h1>🥑 Holy Guacamole!</h1>
-            <p>AI-Powered Drive-Thru Ordering</p>
+    <header class="site-header">
+        <div class="brand">
+            <!-- Avocado + sunburst, redrawn from the storefront sign. -->
+            <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+                <g stroke="var(--guac-gold)" stroke-width="3" stroke-linecap="round">
+                    <path d="M36 12.5h6M33.5 8l4-4.2M38 19.5l5.5 2.4"/>
+                </g>
+                <path d="M20 6c7.2 0 13 6.6 13 15.2C33 30.5 27.2 42 20 42S7 30.5 7 21.2C7 12.6 12.8 6 20 6z" fill="var(--guac-olive-deep)"/>
+                <path d="M20 10.5c5.2 0 9.4 4.9 9.4 11.2 0 6.8-4.2 15.6-9.4 15.6s-9.4-8.8-9.4-15.6c0-6.3 4.2-11.2 9.4-11.2z" fill="var(--guac-lime)"/>
+                <ellipse cx="20" cy="25.5" rx="5" ry="5.6" fill="var(--guac-pit)"/>
+            </svg>
+            <div class="brand-text">
+                <h1>Holy Guacamole!</h1>
+                <p>AI-Powered Drive-Thru Ordering</p>
+            </div>
         </div>
-    </div>
+
+        <a href="https://github.com/signalwire-demos/holyguacamole" target="_blank" rel="noopener noreferrer" class="github-link">
+            <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+            </svg>
+            <span>View on GitHub</span>
+        </a>
+    </header>
 
     <div class="main-container">
         <div class="left-panel">
@@ -1128,32 +1253,34 @@
                     <button id="hangupBtn" style="display:none;" class="danger">📞 End Call</button>
                     <button id="muteBtn" style="display:none;">🔇 Mute</button>
                 </div>
-                <div style="margin-top: 15px;">
-                    <label>
-                        <input type="checkbox" id="startMuted"> Start muted
+                <div class="control-options">
+                    <label class="check">
+                        <input type="checkbox" id="startMuted"><span>Start muted</span>
                     </label>
-                    <label style="margin-left: 20px;">
-                        <input type="checkbox" id="showLog"> Show event log
+                    <label class="check">
+                        <input type="checkbox" id="showLog"><span>Show event log</span>
                     </label>
                 </div>
-                <div style="margin-top: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px;">
-                        <span>🗣️ Voice:</span>
-                        <select id="voiceSelect" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #568203; font-size: 0.9rem; cursor: pointer;">
+                <label class="field">
+                    <span class="field-label">🗣️ Voice</span>
+                    <span class="select">
+                        <select id="voiceSelect">
                             <!-- Voices loaded dynamically from JSON -->
                         </select>
-                    </label>
-                </div>
-                <div style="margin-top: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px;">
-                        <span>🎨 Theme:</span>
-                        <select id="themeSelect" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #568203; font-size: 0.9rem; cursor: pointer;">
-                            <option value="classic">Classic</option>
+                    </span>
+                </label>
+                <label class="field">
+                    <span class="field-label">🎨 Theme</span>
+                    <span class="select">
+                        <select id="themeSelect">
+                            <!-- Value "classic" is kept for saved-preference
+                                 compatibility; it is now the Guacamole theme. -->
+                            <option value="classic">Guacamole</option>
                             <option value="modern">Fresh</option>
                             <option value="signalwire">SignalWire</option>
                         </select>
-                    </label>
-                </div>
+                    </span>
+                </label>
             </div>
 
             <!-- Event Log -->
@@ -1172,6 +1299,6 @@
     <!-- SignalWire Browser SDK v4 from CDN -->
     <script src="https://cdn.signalwire.com/@signalwire/js@4.0.0-rc.0"></script>
     <!-- App Logic -->
-    <script src="/app.js?v=9"></script>
+    <script src="/app.js?v=10"></script>
 </body>
 </html>

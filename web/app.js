@@ -44,6 +44,11 @@ async function loadVoices() {
         { file: '/fish_voices.json',       label: 'Fish.audio' },
     ];
 
+    // Voice a first-time visitor gets. Must match DEFAULT_VOICE in app.py, or
+    // the dropdown would show one voice while the agent spoke in another.
+    // Falls back to the first voice in the list if this id ever disappears.
+    const DEFAULT_VOICE_ID = 'elevenlabs.adam';
+
     try {
         const lists = await Promise.all(VENDORS.map(async (v) => {
             try { return await (await fetch(v.file)).json(); }
@@ -53,6 +58,7 @@ async function loadVoices() {
         voiceSelect.innerHTML = '';
         let total = 0;
         let firstVoiceId = null;
+        let hasDefaultVoice = false;
 
         VENDORS.forEach((v, i) => {
             const voices = lists[i] || [];
@@ -66,13 +72,17 @@ async function loadVoices() {
                 option.title = voice.description || '';
                 group.appendChild(option);
                 if (!firstVoiceId) firstVoiceId = voice.voiceId;
+                if (voice.voiceId === DEFAULT_VOICE_ID) hasDefaultVoice = true;
             });
             voiceSelect.appendChild(group);
             total += voices.length;
         });
 
-        if (!guacamoleSettings.voiceSelection && firstVoiceId) {
-            guacamoleSettings.voiceSelection = firstVoiceId;
+        // What a visitor with no (or a dead) saved pick ends up on.
+        const fallbackVoiceId = (hasDefaultVoice ? DEFAULT_VOICE_ID : firstVoiceId);
+
+        if (!guacamoleSettings.voiceSelection) {
+            guacamoleSettings.voiceSelection = fallbackVoiceId;
         }
 
         if (guacamoleSettings.voiceSelection) {
@@ -80,11 +90,11 @@ async function loadVoices() {
             // A saved voice that no longer exists in any vendor list makes
             // select.value fall to '' (selectedIndex -1): the dropdown renders
             // blank, no change event fires to self-correct, and the dead id
-            // would still be sent to /get_token. Fall back to the first voice.
-            if (voiceSelect.selectedIndex < 0 && firstVoiceId) {
-                console.warn(`Saved voice '${guacamoleSettings.voiceSelection}' is no longer available - falling back to ${firstVoiceId}`);
-                guacamoleSettings.voiceSelection = firstVoiceId;
-                voiceSelect.value = firstVoiceId;
+            // would still be sent to /get_token. Fall back to a live voice.
+            if (voiceSelect.selectedIndex < 0 && fallbackVoiceId) {
+                console.warn(`Saved voice '${guacamoleSettings.voiceSelection}' is no longer available - falling back to ${fallbackVoiceId}`);
+                guacamoleSettings.voiceSelection = fallbackVoiceId;
+                voiceSelect.value = fallbackVoiceId;
                 localStorage.setItem('guacamoleSettings', JSON.stringify(guacamoleSettings));
             }
         }
@@ -99,8 +109,8 @@ async function loadVoices() {
     } catch (error) {
         console.error('Failed to load voices:', error);
         const option = document.createElement('option');
-        option.value = 'inworld.Elizabeth:inworld-tts-1.5-max';
-        option.textContent = 'Elizabeth (Default)';
+        option.value = DEFAULT_VOICE_ID;
+        option.textContent = 'Adam (Default)';
         voiceSelect.appendChild(option);
         guacamoleSettings.voiceSelection = option.value;
     }

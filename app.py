@@ -46,7 +46,7 @@ swml_handler_info = {
 # Voice store file path (shared between workers)
 VOICE_STORE_FILE = "/tmp/guacamole_voice.txt"
 
-DEFAULT_VOICE = "inworld.Elizabeth:inworld-tts-1.5-max"
+DEFAULT_VOICE = "elevenlabs.adam"
 
 # Allowlist of selectable voices, loaded from the same JSON files the web UI
 # offers. Used to reject a bogus/stale ?voice= before it reaches the SWML doc.
@@ -2460,7 +2460,7 @@ def create_server():
     # This is how web clients get authentication tokens for WebRTC calls
     # ─────────────────────────────────────────────────────────────────────────
     @server.app.get("/get_token")
-    def get_token(voice: str = "inworld.Elizabeth:inworld-tts-1.5-max"):
+    def get_token(voice: str = DEFAULT_VOICE):
         """
         Generate a guest token for the web client.
 
