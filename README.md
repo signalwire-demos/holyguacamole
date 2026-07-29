@@ -677,4 +677,4 @@ The result is an AI agent that behaves consistently, handles complex scenarios, 
 MIT License - See LICENSE file for details
 
 ---
-*Built with SignalWire AI Agent SDK*
+*Built with SignalWire SDK*
