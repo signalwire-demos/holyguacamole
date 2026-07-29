@@ -37,11 +37,15 @@ async function loadVoices() {
     // Vendor voice files -> optgroup labels. Order = dropdown order.
     // smallest.ai / fish.audio are experimental SignalWire TTS engines; their
     // voiceIds follow the same engine.voice format (smallest.<id>, fish.<id>).
+    // speechify is PENDING platform support - the engine is not live yet, so
+    // these will fail is_known_voice() upstream until SignalWire ships it. The
+    // ids are the Simba 3.2 curated English set (voice_id + "_32" per their API).
     const VENDORS = [
         { file: '/inworld_voices.json',    label: 'Inworld' },
         { file: '/elevenlabs_voices.json', label: 'ElevenLabs' },
         { file: '/smallest_voices.json',   label: 'Smallest.ai' },
         { file: '/fish_voices.json',       label: 'Fish.audio' },
+        { file: '/speechify_voices.json',  label: 'Speechify' },
     ];
 
     try {

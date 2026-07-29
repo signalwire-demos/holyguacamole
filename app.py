@@ -51,7 +51,8 @@ DEFAULT_VOICE = "inworld.Elizabeth:inworld-tts-1.5-max"
 # Allowlist of selectable voices, loaded from the same JSON files the web UI
 # offers. Used to reject a bogus/stale ?voice= before it reaches the SWML doc.
 _VOICE_FILES = ("inworld_voices.json", "elevenlabs_voices.json",
-                "smallest_voices.json", "fish_voices.json")
+                "smallest_voices.json", "fish_voices.json",
+                "speechify_voices.json")
 _known_voices = set()
 for _vf in _VOICE_FILES:
     try:
@@ -723,11 +724,17 @@ class HolyGuacamoleAgent(AgentBase):
         def save_order_state(result, order_state, global_data):
             """Mirror a COMPACT order state back to global_data.
 
-            Size matters: SWAIG responses over ~1360 bytes come back as
-            webhook_fail/parse_error (observed twice, both spliced at exactly
-            byte 1360). Echoing the full item list - names, prices, per-item
-            totals and 60-char descriptions - made the response grow with the
-            order and blow that budget at 3-4 items.
+            Originally a workaround: echoing the full item list - names, prices,
+            per-item totals and 60-char descriptions - grew the response with the
+            order and, at 3-4 items, tripped what looked like a ~1360-byte
+            platform limit (webhook_fail/parse_error at HTTP 200). Root cause was
+            actually an out-of-bounds read in FreeSWITCH's SWAIG response reader,
+            fixed upstream 2026-07; there is no size limit, and small responses
+            were overreading too - they just landed on harmless bytes.
+
+            Kept anyway, on its own merits: a per-turn payload that grows with
+            conversation state is unbounded by design, and none of this data
+            needs to make the round trip.
 
             The prompt only interpolates ${global_data.order_state.item_count},
             .total and .order_number, and the authoritative copy now lives
@@ -2572,6 +2579,15 @@ def create_server():
                                  allow_nan=False, separators=(",", ":")).encode("ascii")
         except Exception:
             escaped = body        # not re-encodable: pass through untouched
+        # Size telemetry for SWAIG responses. There is no platform size limit -
+        # the ~1360-byte cliff we chased in 2026-07 was an out-of-bounds read in
+        # FreeSWITCH's post_write_function ("%s" on curl's non-NUL-terminated
+        # chunk, overreading into curl's adjacent POST buffer); fixed upstream.
+        # Kept as a plain gauge because a response growing with conversation
+        # state is still a design smell worth seeing, and it costs one log line.
+        if request.url.path.rstrip("/").endswith("/swaig"):
+            logger.info("SWAIG response %d bytes (%s)", len(escaped), request.url.path)
+
         headers = dict(response.headers)
         headers.pop("content-length", None)   # let Starlette recompute it
         return Response(content=escaped, status_code=response.status_code,

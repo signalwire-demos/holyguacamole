@@ -105,3 +105,17 @@ out/
 # ─────────────────────────────────────────────────────────────────────────────
 coverage/
 .nyc_output/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Docker
+# ─────────────────────────────────────────────────────────────────────────────
+# The demo is deployed from a local docker-compose stack, but this repo does not
+# ship a container build (removed from main in fe3a34c "Remove docker file").
+# Keep local Docker files out of the tree so they cannot be reintroduced.
+Dockerfile
+.dockerignore
+docker-compose*.yml
+docker-compose*.yaml
+
+# Local media backup taken before the 2026-07 asset refresh
+web/_media_backup_*/

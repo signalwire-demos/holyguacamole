@@ -1,0 +1,58 @@
+[
+  {
+    "voiceId": "fish.933563129e564b19a115bedd57b7406a",
+    "displayName": "Sarah",
+    "description": "Conversational female, gentle",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "fish.59e9dc1cb20c452584788a2690c80970",
+    "displayName": "Alle",
+    "description": "Conversational female, bright",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "fish.b347db033a6549378b48d00acb0d06cd",
+    "displayName": "Selene",
+    "description": "Calm, gentle female",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "fish.536d3a5e000945adb7038665781a4aca",
+    "displayName": "Ethan",
+    "description": "Calm, clear male",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "fish.bf322df2096a46f18c579d0baa36f41d",
+    "displayName": "Adrian",
+    "description": "Deep, measured male",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "fish.9032b5f2e2554b5a957ad655c052af16",
+    "displayName": "Slax",
+    "description": "Calm, clear, conversational",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "fish.802e3bc2b27e49c2995d23ef70e6ac89",
+    "displayName": "Marcus",
+    "description": "Clear, crisp male",
+    "languages": [
+      "en"
+    ]
+  }
+]
