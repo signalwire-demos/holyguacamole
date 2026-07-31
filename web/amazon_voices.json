@@ -1,0 +1,22 @@
+[
+  {"voiceId": "amazon.Danielle:neural:en-US", "displayName": "Danielle", "description": "American female", "languages": ["en"]},
+  {"voiceId": "amazon.Gregory:neural:en-US", "displayName": "Gregory", "description": "American male", "languages": ["en"]},
+  {"voiceId": "amazon.Joanna:neural:en-US", "displayName": "Joanna", "description": "American female", "languages": ["en"]},
+  {"voiceId": "amazon.Joey:neural:en-US", "displayName": "Joey", "description": "American male", "languages": ["en"]},
+  {"voiceId": "amazon.Kendra:neural:en-US", "displayName": "Kendra", "description": "American female", "languages": ["en"]},
+  {"voiceId": "amazon.Kimberly:neural:en-US", "displayName": "Kimberly", "description": "American female", "languages": ["en"]},
+  {"voiceId": "amazon.Matthew:neural:en-US", "displayName": "Matthew", "description": "American male", "languages": ["en"]},
+  {"voiceId": "amazon.Ruth:neural:en-US", "displayName": "Ruth", "description": "American female", "languages": ["en"]},
+  {"voiceId": "amazon.Salli:neural:en-US", "displayName": "Salli", "description": "American female", "languages": ["en"]},
+  {"voiceId": "amazon.Stephen:neural:en-US", "displayName": "Stephen", "description": "American male", "languages": ["en"]},
+  {"voiceId": "amazon.Amy:neural:en-GB", "displayName": "Amy", "description": "British female", "languages": ["en"]},
+  {"voiceId": "amazon.Arthur:neural:en-GB", "displayName": "Arthur", "description": "British male", "languages": ["en"]},
+  {"voiceId": "amazon.Brian:neural:en-GB", "displayName": "Brian", "description": "British male", "languages": ["en"]},
+  {"voiceId": "amazon.Emma:neural:en-GB", "displayName": "Emma", "description": "British female", "languages": ["en"]},
+  {"voiceId": "amazon.Olivia:neural:en-AU", "displayName": "Olivia", "description": "Australian female", "languages": ["en"]},
+  {"voiceId": "amazon.Niamh:neural:en-IE", "displayName": "Niamh", "description": "Irish female", "languages": ["en"]},
+  {"voiceId": "amazon.Kajal:neural:en-IN", "displayName": "Kajal", "description": "Indian female", "languages": ["en"]},
+  {"voiceId": "amazon.Aria:neural:en-NZ", "displayName": "Aria", "description": "New Zealand female", "languages": ["en"]},
+  {"voiceId": "amazon.Ayanda:neural:en-ZA", "displayName": "Ayanda", "description": "South African female", "languages": ["en"]},
+  {"voiceId": "amazon.Jasmine:neural:en-SG", "displayName": "Jasmine", "description": "Singaporean female", "languages": ["en"]}
+]

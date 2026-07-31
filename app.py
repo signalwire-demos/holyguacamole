@@ -48,11 +48,23 @@ VOICE_STORE_FILE = "/tmp/guacamole_voice.txt"
 
 DEFAULT_VOICE = "elevenlabs.adam"
 
+# Speechify (Simba 3.2) is staged but not yet live on the platform: selecting one
+# of its voices would build an SWML doc the TTS engine cannot satisfy, failing the
+# call. Gated off by default so staging/production never offer a broken voice; set
+# HG_ENABLE_SPEECHIFY=1 (dev compose) to expose it. The same flag drives the
+# static route below, so the dropdown and this allowlist cannot disagree.
+SPEECHIFY_ENABLED = os.environ.get("HG_ENABLE_SPEECHIFY") == "1"
+
 # Allowlist of selectable voices, loaded from the same JSON files the web UI
 # offers. Used to reject a bogus/stale ?voice= before it reaches the SWML doc.
 _VOICE_FILES = ("inworld_voices.json", "elevenlabs_voices.json",
-                "smallest_voices.json", "fish_voices.json",
-                "speechify_voices.json")
+                "amazon_voices.json", "azure_voices.json",
+                "gcloud_voices.json", "openai_voices.json",
+                "deepgram_voices.json", "cartesia_voices.json",
+                "rime_voices.json",
+                "smallest_voices.json", "fish_voices.json")
+if SPEECHIFY_ENABLED:
+    _VOICE_FILES += ("speechify_voices.json",)
 _known_voices = set()
 for _vf in _VOICE_FILES:
     try:
@@ -2555,18 +2567,33 @@ def create_server():
     if web_dir.exists():
         server.serve_static_files(str(web_dir))
 
+    # Hide the Speechify vendor list unless the flag is on. app.js treats a failed
+    # vendor fetch as an empty list and simply omits that optgroup, so a 404 here
+    # removes the group from the dropdown with no client-side change. Registered
+    # as middleware because the static mount above would otherwise serve the file
+    # straight off disk.
+    @server.app.middleware("http")
+    async def _gate_speechify(request, call_next):
+        if (not SPEECHIFY_ENABLED
+                and request.url.path.rstrip("/").endswith("speechify_voices.json")):
+            return Response(status_code=404)
+        return await call_next(request)
+
     # The SDK's static handler sends no Cache-Control at all, so browsers cache
     # the HTML shell heuristically. That shell carries the /app.js?v=N reference
     # AND the whole inline <style> theme block, so a stale copy kept serving old
     # JS/CSS no matter how many times the version was bumped (this bit us three
     # times). Make the shell always revalidate; let real assets stay cacheable.
-    # Starlette's JSONResponse renders with ensure_ascii=False, so any non-ASCII
-    # character (emoji, accents, curly quotes) makes the body's BYTE length
-    # exceed its CHARACTER length. The SWAIG consumer reads by character count,
-    # so the surplus bytes bleed into the next read and the whole turn fails with
-    # webhook_fail/parse_error. Re-encoding with ensure_ascii=True sends the same
-    # data as \uXXXX escapes - pure ASCII, byte length == char length - and the
-    # receiving JSON parser decodes it back to the original characters.
+    #
+    # Starlette's JSONResponse renders with ensure_ascii=False. Re-encoding with
+    # ensure_ascii=True sends the same data as \uXXXX escapes, so emoji/accents
+    # travel as pure ASCII and the receiving parser decodes them unchanged.
+    # NOTE: this was originally added on the theory that the SWAIG consumer read
+    # by character count, so surplus bytes from multi-byte characters bled into
+    # the next read. That theory was wrong - the real defect was an out-of-bounds
+    # read over curl's non-NUL-terminated buffer, fixed upstream 2026-07, and
+    # switching to pure ASCII did not stop it. Kept because escaping non-ASCII on
+    # the wire is correct on its own merits, not because it fixes anything.
     @server.app.middleware("http")
     async def _ascii_safe_json(request, call_next):
         response = await call_next(request)
@@ -2605,6 +2632,13 @@ def create_server():
             # no-cache = keep the copy but ALWAYS revalidate against the ETag.
             # Cheap (304s when unchanged) and a forgotten ?v= bump can no longer
             # leave a browser running last week's script.
+            response.headers["Cache-Control"] = "no-cache"
+        elif path.endswith("_voices.json"):
+            # Vendor voice lists are NOT content-addressed - no ?v= in the name -
+            # and app.js fetches them by plain filename. Under max-age they would
+            # keep serving a stale list for a day, which matters when a voice is
+            # withdrawn (a removed voice would still be selectable, and a removed
+            # id sent to /get_token). Revalidate every time; these are ~1-6 KB.
             response.headers["Cache-Control"] = "no-cache"
         elif path.endswith((".png", ".jpg", ".jpeg", ".mp4", ".woff2", ".json")):
             # Content-addressed by name here; a day of caching is plenty and the

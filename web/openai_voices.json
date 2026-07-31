@@ -1,0 +1,8 @@
+[
+  {"voiceId": "openai.alloy", "displayName": "Alloy", "description": "Neutral, balanced voice", "languages": ["en"]},
+  {"voiceId": "openai.echo", "displayName": "Echo", "description": "Clear, measured voice", "languages": ["en"]},
+  {"voiceId": "openai.fable", "displayName": "Fable", "description": "British accent, articulate", "languages": ["en"]},
+  {"voiceId": "openai.onyx", "displayName": "Onyx", "description": "Deep, authoritative voice", "languages": ["en"]},
+  {"voiceId": "openai.nova", "displayName": "Nova", "description": "Energetic, friendly voice", "languages": ["en"]},
+  {"voiceId": "openai.shimmer", "displayName": "Shimmer", "description": "Soft, gentle voice", "languages": ["en"]}
+]

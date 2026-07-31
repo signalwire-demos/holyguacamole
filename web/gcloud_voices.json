@@ -1,0 +1,20 @@
+[
+  {"voiceId": "gcloud.en-US-Neural2-A", "displayName": "Neural2 A (US)", "description": "American male, Neural2", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Neural2-C", "displayName": "Neural2 C (US)", "description": "American female, Neural2", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Neural2-D", "displayName": "Neural2 D (US)", "description": "American male, Neural2", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Neural2-E", "displayName": "Neural2 E (US)", "description": "American female, Neural2", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Neural2-F", "displayName": "Neural2 F (US)", "description": "American female, Neural2", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Neural2-G", "displayName": "Neural2 G (US)", "description": "American female, Neural2", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Neural2-H", "displayName": "Neural2 H (US)", "description": "American female, Neural2", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Neural2-I", "displayName": "Neural2 I (US)", "description": "American male, Neural2", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Neural2-J", "displayName": "Neural2 J (US)", "description": "American male, Neural2", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Wavenet-A", "displayName": "Wavenet A (US)", "description": "American male, Wavenet", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Wavenet-B", "displayName": "Wavenet B (US)", "description": "American male, Wavenet", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Wavenet-C", "displayName": "Wavenet C (US)", "description": "American female, Wavenet", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Wavenet-D", "displayName": "Wavenet D (US)", "description": "American male, Wavenet", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Wavenet-E", "displayName": "Wavenet E (US)", "description": "American female, Wavenet", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Wavenet-F", "displayName": "Wavenet F (US)", "description": "American female, Wavenet", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Wavenet-G", "displayName": "Wavenet G (US)", "description": "American female, Wavenet", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Wavenet-H", "displayName": "Wavenet H (US)", "description": "American female, Wavenet", "languages": ["en"]},
+  {"voiceId": "gcloud.en-US-Wavenet-I", "displayName": "Wavenet I (US)", "description": "American male, Wavenet", "languages": ["en"]}
+]

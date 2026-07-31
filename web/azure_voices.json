@@ -1,0 +1,20 @@
+[
+  {"voiceId": "azure.en-US-AmberNeural", "displayName": "Amber", "description": "American female", "languages": ["en"]},
+  {"voiceId": "azure.en-US-AndrewNeural", "displayName": "Andrew", "description": "American male", "languages": ["en"]},
+  {"voiceId": "azure.en-US-AriaNeural", "displayName": "Aria", "description": "American female", "languages": ["en"]},
+  {"voiceId": "azure.en-US-AshleyNeural", "displayName": "Ashley", "description": "American female", "languages": ["en"]},
+  {"voiceId": "azure.en-US-AvaNeural", "displayName": "Ava", "description": "American female", "languages": ["en"]},
+  {"voiceId": "azure.en-US-BrandonNeural", "displayName": "Brandon", "description": "American male", "languages": ["en"]},
+  {"voiceId": "azure.en-US-BrianNeural", "displayName": "Brian", "description": "American male", "languages": ["en"]},
+  {"voiceId": "azure.en-US-ChristopherNeural", "displayName": "Christopher", "description": "American male", "languages": ["en"]},
+  {"voiceId": "azure.en-US-CoraNeural", "displayName": "Cora", "description": "American female", "languages": ["en"]},
+  {"voiceId": "azure.en-US-DavisNeural", "displayName": "Davis", "description": "American male", "languages": ["en"]},
+  {"voiceId": "azure.en-US-ElizabethNeural", "displayName": "Elizabeth", "description": "American female", "languages": ["en"]},
+  {"voiceId": "azure.en-US-EmmaNeural", "displayName": "Emma", "description": "American female", "languages": ["en"]},
+  {"voiceId": "azure.en-US-EricNeural", "displayName": "Eric", "description": "American male", "languages": ["en"]},
+  {"voiceId": "azure.en-US-GuyNeural", "displayName": "Guy", "description": "American male", "languages": ["en"]},
+  {"voiceId": "azure.en-US-JacobNeural", "displayName": "Jacob", "description": "American male", "languages": ["en"]},
+  {"voiceId": "azure.en-US-JaneNeural", "displayName": "Jane", "description": "American female", "languages": ["en"]},
+  {"voiceId": "azure.en-US-JasonNeural", "displayName": "Jason", "description": "American male", "languages": ["en"]},
+  {"voiceId": "azure.en-US-JennyNeural", "displayName": "Jenny", "description": "American female", "languages": ["en"]}
+]

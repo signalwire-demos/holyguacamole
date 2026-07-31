@@ -812,6 +812,90 @@
             white-space: nowrap;
         }
 
+        /* Vendor filter: revealed only while the voice dropdown is engaged. With
+           12 engines and 200+ voices the list is long, so this narrows it down.
+           Anchored to .voice-field, which is the positioning context. */
+        .voice-field {
+            position: relative;
+        }
+        .vendor-filter {
+            position: absolute;
+            z-index: 40;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            padding: 10px 12px 12px;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--r-sm);
+            background: var(--surface);
+            box-shadow: 0 10px 28px rgb(0 0 0 / .28);
+        }
+        .vendor-filter[hidden] { display: none; }
+        .vendor-filter-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding-bottom: 7px;
+            border-bottom: 1px solid var(--hairline);
+            font-size: .76rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: var(--fg-subtle);
+        }
+        .vendor-filter-actions { display: flex; gap: 6px; }
+        .vendor-filter-actions button {
+            padding: 2px 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--r-pill);
+            background: var(--surface-2);
+            color: var(--fg-muted);
+            font-family: inherit;
+            font-size: .7rem;
+            font-weight: 600;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .vendor-filter-actions button:hover {
+            border-color: var(--border-strong);
+            color: var(--fg);
+        }
+        /* Two columns so 12 vendors stay visible without scrolling on desktop. */
+        .vendor-filter-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 3px 12px;
+            max-height: 210px;
+            overflow-y: auto;
+        }
+        @media (max-width: 560px) {
+            .vendor-filter-list { grid-template-columns: 1fr; }
+        }
+        .vendor-filter-list .check {
+            font-size: .82rem;
+            padding: 2px 0;
+            min-width: 0;
+        }
+        .vendor-filter-list .check span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .vendor-count {
+            margin-left: 4px;
+            color: var(--fg-subtle);
+            font-variant-numeric: tabular-nums;
+        }
+        /* A vendor whose file failed to load (e.g. Speechify when gated off)
+           is shown disabled rather than silently vanishing. */
+        .vendor-filter-list .check.is-empty {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
         /* Custom select: native chevron replaced by a masked one so it picks up
            the theme's text colour automatically. */
         .select {
@@ -1261,14 +1345,30 @@
                         <input type="checkbox" id="showLog"><span>Show event log</span>
                     </label>
                 </div>
-                <label class="field">
-                    <span class="field-label">🗣️ Voice</span>
-                    <span class="select">
-                        <select id="voiceSelect">
-                            <!-- Voices loaded dynamically from JSON -->
-                        </select>
-                    </span>
-                </label>
+                <!-- The vendor filter lives OUTSIDE the <label>: a checkbox inside a
+                     label that already targets #voiceSelect would retarget the click
+                     to the select instead of toggling the box. -->
+                <div class="voice-field">
+                    <label class="field">
+                        <span class="field-label">🗣️ Voice</span>
+                        <span class="select">
+                            <select id="voiceSelect">
+                                <!-- Voices loaded dynamically from JSON -->
+                            </select>
+                        </span>
+                    </label>
+                    <div id="vendorFilter" class="vendor-filter" hidden
+                         role="group" aria-label="Filter voices by vendor">
+                        <div class="vendor-filter-head">
+                            <span>Vendors</span>
+                            <div class="vendor-filter-actions">
+                                <button type="button" id="vendorAll">All</button>
+                                <button type="button" id="vendorNone">None</button>
+                            </div>
+                        </div>
+                        <div id="vendorFilterList" class="vendor-filter-list"></div>
+                    </div>
+                </div>
                 <label class="field">
                     <span class="field-label">🎨 Theme</span>
                     <span class="select">
@@ -1299,6 +1399,6 @@
     <!-- SignalWire Browser SDK v4 from CDN -->
     <script src="https://cdn.signalwire.com/@signalwire/js@4.0.0-rc.0"></script>
     <!-- App Logic -->
-    <script src="/app.js?v=11"></script>
+    <script src="/app.js?v=13"></script>
 </body>
 </html>

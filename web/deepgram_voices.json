@@ -1,0 +1,20 @@
+[
+  {"voiceId": "deepgram.aura-2-andromeda-en", "displayName": "Andromeda", "description": "American female, casual, expressive", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-apollo-en", "displayName": "Apollo", "description": "American male, confident, comfortable", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-arcas-en", "displayName": "Arcas", "description": "American male, natural, smooth", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-aries-en", "displayName": "Aries", "description": "American male, warm, energetic", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-asteria-en", "displayName": "Asteria", "description": "American female, clear, confident", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-athena-en", "displayName": "Athena", "description": "American female, calm, smooth", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-atlas-en", "displayName": "Atlas", "description": "American male, enthusiastic, confident", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-aurora-en", "displayName": "Aurora", "description": "American female, cheerful, expressive", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-callista-en", "displayName": "Callista", "description": "American female, clear, energetic", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-cora-en", "displayName": "Cora", "description": "American female, smooth, melodic", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-cordelia-en", "displayName": "Cordelia", "description": "American female, approachable, warm", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-delia-en", "displayName": "Delia", "description": "American female, casual, friendly", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-electra-en", "displayName": "Electra", "description": "American female, professional, engaging", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-harmonia-en", "displayName": "Harmonia", "description": "American female, empathetic, clear", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-helena-en", "displayName": "Helena", "description": "American female, caring, natural", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-hera-en", "displayName": "Hera", "description": "American female, smooth, warm", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-hermes-en", "displayName": "Hermes", "description": "American male, expressive, engaging", "languages": ["en"]},
+  {"voiceId": "deepgram.aura-2-iris-en", "displayName": "Iris", "description": "American female, cheerful, positive", "languages": ["en"]}
+]
