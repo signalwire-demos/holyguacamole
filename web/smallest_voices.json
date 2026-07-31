@@ -1,0 +1,194 @@
+[
+  {
+    "voiceId": "smallest.avery",
+    "displayName": "Avery",
+    "description": "American female",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.liam",
+    "displayName": "Liam",
+    "description": "British male",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.blofeld",
+    "displayName": "Blofeld",
+    "description": "American male, concentrating",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.luther",
+    "displayName": "Luther",
+    "description": "American female, domineering",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.julia",
+    "displayName": "Julia",
+    "description": "British female, concentrating",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.erica",
+    "displayName": "Erica",
+    "description": "Canadian female, strong",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.nyah",
+    "displayName": "Nyah",
+    "description": "Australian female, mighty",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.william",
+    "displayName": "William",
+    "description": "Canadian male, powerful",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.felix",
+    "displayName": "Felix",
+    "description": "American male",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.zorin",
+    "displayName": "Zorin",
+    "description": "American male, friendly",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.alec",
+    "displayName": "Alec",
+    "description": "Canadian male, concentrating",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.ilsa",
+    "displayName": "Ilsa",
+    "description": "American female, powerful",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.bellatrix",
+    "displayName": "Bellatrix",
+    "description": "American female, strong",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.ryan",
+    "displayName": "Ryan",
+    "description": "American male",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.alistair",
+    "displayName": "Alistair",
+    "description": "British male",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.mia",
+    "displayName": "Mia",
+    "description": "American female",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.noah",
+    "displayName": "Noah",
+    "description": "British male",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.quinn",
+    "displayName": "Quinn",
+    "description": "American female",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.poppy",
+    "displayName": "Poppy",
+    "description": "British female",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.christine",
+    "displayName": "Christine",
+    "description": "American female, cheerful",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.john",
+    "displayName": "John",
+    "description": "American male",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.ronald",
+    "displayName": "Ronald",
+    "description": "American male, bold",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.sophia",
+    "displayName": "Sophia",
+    "description": "American female",
+    "languages": [
+      "en"
+    ]
+  },
+  {
+    "voiceId": "smallest.robert",
+    "displayName": "Robert",
+    "description": "American male",
+    "languages": [
+      "en"
+    ]
+  }
+]
