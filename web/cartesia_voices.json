@@ -1,0 +1,20 @@
+[
+  {"voiceId": "cartesia.79f8b5fb-2cc8-479a-80df-29f7a7cf1a3e", "displayName": "Nonfiction Man", "description": "American male", "languages": ["en"]},
+  {"voiceId": "cartesia.e00d0e4c-a5c8-443f-a8a3-473eb9a62355", "displayName": "Friendly Sidekick", "description": "American English", "languages": ["en"]},
+  {"voiceId": "cartesia.3b554273-4299-48b9-9aaf-eefd438e3941", "displayName": "Indian Lady", "description": "Indian female", "languages": ["en"]},
+  {"voiceId": "cartesia.71a7ad14-091c-4e8e-a314-022ece01c121", "displayName": "British Reading Lady", "description": "British female", "languages": ["en"]},
+  {"voiceId": "cartesia.4d2fd738-3b3d-4368-957a-bb4805275bd9", "displayName": "British Narration Lady", "description": "British female", "languages": ["en"]},
+  {"voiceId": "cartesia.15a9cd88-84b0-4a8b-95f2-5d583b54c72e", "displayName": "Reading Lady", "description": "American female", "languages": ["en"]},
+  {"voiceId": "cartesia.d46abd1d-2d02-43e8-819f-51fb652c1c61", "displayName": "Newsman", "description": "American male", "languages": ["en"]},
+  {"voiceId": "cartesia.cd17ff2d-5ea4-4695-be8f-42193949b946", "displayName": "Meditation Lady", "description": "American female", "languages": ["en"]},
+  {"voiceId": "cartesia.5345cf08-6f37-424d-a5d9-8ae1101b9377", "displayName": "Maria", "description": "American female", "languages": ["en"]},
+  {"voiceId": "cartesia.41534e16-2966-4c6b-9670-111411def906", "displayName": "Radioman", "description": "American male", "languages": ["en"]},
+  {"voiceId": "cartesia.bf991597-6c13-47e4-8411-91ec2de5c466", "displayName": "Newslady", "description": "American female", "languages": ["en"]},
+  {"voiceId": "cartesia.00a77add-48d5-4ef6-8157-71e5437b282d", "displayName": "Calm Lady", "description": "American female", "languages": ["en"]},
+  {"voiceId": "cartesia.156fb8d2-335b-4950-9cb3-a2d33befec77", "displayName": "Helpful Woman", "description": "American female", "languages": ["en"]},
+  {"voiceId": "cartesia.b7d50908-b17c-442d-ad8d-810c63997ed9", "displayName": "California Girl", "description": "American female", "languages": ["en"]},
+  {"voiceId": "cartesia.36b42fcb-60c5-4bec-b077-cb1a00a92ec6", "displayName": "Pilot over Intercom", "description": "American English", "languages": ["en"]},
+  {"voiceId": "cartesia.f146dcec-e481-45be-8ad2-96e1e40e7f32", "displayName": "Reading Man", "description": "American male", "languages": ["en"]},
+  {"voiceId": "cartesia.34575e71-908f-4ab6-ab54-b08c95d6597d", "displayName": "New York Man", "description": "American male", "languages": ["en"]},
+  {"voiceId": "cartesia.a0e99841-438c-4a64-b679-ae501e7d6091", "displayName": "Barbershop Man", "description": "American male", "languages": ["en"]}
+]

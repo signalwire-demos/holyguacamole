@@ -1,0 +1,140 @@
+[
+  {
+    "voiceId": "smallest.savannah:lightning_v3.1_pro",
+    "displayName": "Savannah (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.kelsey:lightning_v3.1_pro",
+    "displayName": "Kelsey (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.kaitlyn:lightning_v3.1_pro",
+    "displayName": "Kaitlyn (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.amelia:lightning_v3.1_pro",
+    "displayName": "Amelia (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.zoe:lightning_v3.1_pro",
+    "displayName": "Zoe (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.ruby:lightning_v3.1_pro",
+    "displayName": "Ruby (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.nolan:lightning_v3.1_pro",
+    "displayName": "Nolan (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.spencer:lightning_v3.1_pro",
+    "displayName": "Spencer (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.henry:lightning_v3.1_pro",
+    "displayName": "Henry (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.maverick:lightning_v3.1_pro",
+    "displayName": "Maverick (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.austin:lightning_v3.1_pro",
+    "displayName": "Austin (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.blake:lightning_v3.1_pro",
+    "displayName": "Blake (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.ellie:lightning_v3.1_pro",
+    "displayName": "Ellie (en-GB)",
+    "description": "British female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.bethany:lightning_v3.1_pro",
+    "displayName": "Bethany (en-GB)",
+    "description": "British female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.callum:lightning_v3.1_pro",
+    "displayName": "Callum (en-GB)",
+    "description": "British male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.sam:lightning_v3.1_pro",
+    "displayName": "Sam (en-GB)",
+    "description": "British male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.benedict:lightning_v3.1_pro",
+    "displayName": "Benedict (en-GB)",
+    "description": "British male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "smallest.meher:lightning_v3.1_pro",
+    "displayName": "Meher (en-IN)",
+    "description": "Indian female",
+    "languages": ["en", "hi", "multi"]
+  },
+  {
+    "voiceId": "smallest.vyom:lightning_v3.1_pro",
+    "displayName": "Vyom (en-IN)",
+    "description": "Indian male",
+    "languages": ["en", "hi", "multi"]
+  },
+  {
+    "voiceId": "smallest.martina:lightning_v3.1_pro",
+    "displayName": "Martina (es-419)",
+    "description": "Latin American Spanish female",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "smallest.catalina:lightning_v3.1_pro",
+    "displayName": "Catalina (es-419)",
+    "description": "Latin American Spanish female",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "smallest.gabriel:lightning_v3.1_pro",
+    "displayName": "Gabriel (es-419)",
+    "description": "Latin American Spanish male",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "smallest.claudia:lightning_v3.1_pro",
+    "displayName": "Claudia (es-ES)",
+    "description": "European Spanish female",
+    "languages": ["es"]
+  }
+]

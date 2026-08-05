@@ -54,12 +54,6 @@
     "languages": ["en"]
   },
   {
-    "voiceId": "inworld.Pixie:inworld-tts-1.5-max",
-    "displayName": "Pixie",
-    "description": "High-pitched, childlike female voice with a squeaky quality - great for a cartoon character",
-    "languages": ["en"]
-  },
-  {
     "voiceId": "inworld.Mark:inworld-tts-1.5-max",
     "displayName": "Mark",
     "description": "Energetic, expressive man with a rapid-fire delivery",

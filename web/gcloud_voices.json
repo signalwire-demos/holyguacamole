@@ -1,0 +1,206 @@
+[
+  {
+    "voiceId": "gcloud.en-US-Neural2-A",
+    "displayName": "Neural2 A (en-US)",
+    "description": "American male, Neural2",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Neural2-C",
+    "displayName": "Neural2 C (en-US)",
+    "description": "American female, Neural2",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Neural2-D",
+    "displayName": "Neural2 D (en-US)",
+    "description": "American male, Neural2",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Neural2-E",
+    "displayName": "Neural2 E (en-US)",
+    "description": "American female, Neural2",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Neural2-F",
+    "displayName": "Neural2 F (en-US)",
+    "description": "American female, Neural2",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Neural2-G",
+    "displayName": "Neural2 G (en-US)",
+    "description": "American female, Neural2",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Neural2-H",
+    "displayName": "Neural2 H (en-US)",
+    "description": "American female, Neural2",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Neural2-I",
+    "displayName": "Neural2 I (en-US)",
+    "description": "American male, Neural2",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Neural2-J",
+    "displayName": "Neural2 J (en-US)",
+    "description": "American male, Neural2",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Wavenet-A",
+    "displayName": "Wavenet A (en-US)",
+    "description": "American male, Wavenet",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Wavenet-B",
+    "displayName": "Wavenet B (en-US)",
+    "description": "American male, Wavenet",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Wavenet-C",
+    "displayName": "Wavenet C (en-US)",
+    "description": "American female, Wavenet",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Wavenet-D",
+    "displayName": "Wavenet D (en-US)",
+    "description": "American male, Wavenet",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Wavenet-E",
+    "displayName": "Wavenet E (en-US)",
+    "description": "American female, Wavenet",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Wavenet-F",
+    "displayName": "Wavenet F (en-US)",
+    "description": "American female, Wavenet",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Wavenet-G",
+    "displayName": "Wavenet G (en-US)",
+    "description": "American female, Wavenet",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Wavenet-H",
+    "displayName": "Wavenet H (en-US)",
+    "description": "American female, Wavenet",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.en-US-Wavenet-I",
+    "displayName": "Wavenet I (en-US)",
+    "description": "American male, Wavenet",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "gcloud.es-ES-Neural2-A",
+    "displayName": "Neural2 A (es-ES)",
+    "description": "European Spanish female, Neural2",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "gcloud.es-ES-Neural2-F",
+    "displayName": "Neural2 F (es-ES)",
+    "description": "European Spanish male, Neural2",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "gcloud.fr-FR-Neural2-F",
+    "displayName": "Neural2 F (fr-FR)",
+    "description": "French female, Neural2",
+    "languages": ["fr"]
+  },
+  {
+    "voiceId": "gcloud.fr-FR-Neural2-G",
+    "displayName": "Neural2 G (fr-FR)",
+    "description": "French male, Neural2",
+    "languages": ["fr"]
+  },
+  {
+    "voiceId": "gcloud.de-DE-Neural2-G",
+    "displayName": "Neural2 G (de-DE)",
+    "description": "German female, Neural2",
+    "languages": ["de"]
+  },
+  {
+    "voiceId": "gcloud.de-DE-Neural2-H",
+    "displayName": "Neural2 H (de-DE)",
+    "description": "German male, Neural2",
+    "languages": ["de"]
+  },
+  {
+    "voiceId": "gcloud.it-IT-Neural2-A",
+    "displayName": "Neural2 A (it-IT)",
+    "description": "Italian female, Neural2",
+    "languages": ["it"]
+  },
+  {
+    "voiceId": "gcloud.it-IT-Neural2-F",
+    "displayName": "Neural2 F (it-IT)",
+    "description": "Italian male, Neural2",
+    "languages": ["it"]
+  },
+  {
+    "voiceId": "gcloud.pt-BR-Neural2-A",
+    "displayName": "Neural2 A (pt-BR)",
+    "description": "Brazilian Portuguese female, Neural2",
+    "languages": ["pt"]
+  },
+  {
+    "voiceId": "gcloud.pt-BR-Neural2-B",
+    "displayName": "Neural2 B (pt-BR)",
+    "description": "Brazilian Portuguese male, Neural2",
+    "languages": ["pt"]
+  },
+  {
+    "voiceId": "gcloud.ja-JP-Neural2-B",
+    "displayName": "Neural2 B (ja-JP)",
+    "description": "Japanese female, Neural2",
+    "languages": ["ja"]
+  },
+  {
+    "voiceId": "gcloud.ja-JP-Neural2-C",
+    "displayName": "Neural2 C (ja-JP)",
+    "description": "Japanese male, Neural2",
+    "languages": ["ja"]
+  },
+  {
+    "voiceId": "gcloud.ko-KR-Neural2-A",
+    "displayName": "Neural2 A (ko-KR)",
+    "description": "Korean female, Neural2",
+    "languages": ["ko"]
+  },
+  {
+    "voiceId": "gcloud.ko-KR-Neural2-C",
+    "displayName": "Neural2 C (ko-KR)",
+    "description": "Korean male, Neural2",
+    "languages": ["ko"]
+  },
+  {
+    "voiceId": "gcloud.hi-IN-Neural2-A",
+    "displayName": "Neural2 A (hi-IN)",
+    "description": "Hindi female, Neural2",
+    "languages": ["hi"]
+  },
+  {
+    "voiceId": "gcloud.hi-IN-Neural2-B",
+    "displayName": "Neural2 B (hi-IN)",
+    "description": "Hindi male, Neural2",
+    "languages": ["hi"]
+  }
+]

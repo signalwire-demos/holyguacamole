@@ -1,0 +1,20 @@
+[
+  {"voiceId": "rime.abbie", "displayName": "Abbie", "description": "American female, a bright, upbeat young Californian voice, friendly and quick", "languages": ["en"]},
+  {"voiceId": "rime.alexis", "displayName": "Alexis", "description": "English female, a clear, even-keeled female voice", "languages": ["en"]},
+  {"voiceId": "rime.allison", "displayName": "Allison", "description": "American female, a soft, whispery young American voice, calm and soothing", "languages": ["en"]},
+  {"voiceId": "rime.ally", "displayName": "Ally", "description": "American female, an upbeat young Latina voice with a casual edge", "languages": ["en"]},
+  {"voiceId": "rime.alona", "displayName": "Alona", "description": "American female, a bright, upbeat young Latina voice, lively and warm", "languages": ["en"]},
+  {"voiceId": "rime.alpine", "displayName": "Alpine", "description": "American male, a friendly young Latino voice, easygoing and approachable", "languages": ["en"]},
+  {"voiceId": "rime.amber", "displayName": "Amber", "description": "American female, a cool, serious young American voice, low and steady", "languages": ["en"]},
+  {"voiceId": "rime.ana", "displayName": "Ana", "description": "American female, a flexible female voice, both polished and approachable", "languages": ["en"]},
+  {"voiceId": "rime.antoine", "displayName": "Antoine", "description": "American male, a friendly, smart Southern voice, warm and approachable", "languages": ["en"]},
+  {"voiceId": "rime.armon", "displayName": "Armon", "description": "American male, a deep, serious African-American voice, grounded and slow", "languages": ["en"]},
+  {"voiceId": "rime.bayou", "displayName": "Bayou", "description": "American male, a friendly, slightly nerdy American voice, warm and approachable", "languages": ["en"]},
+  {"voiceId": "rime.benjamin", "displayName": "Benjamin", "description": "American male, a young American male voice, easygoing and clear", "languages": ["en"]},
+  {"voiceId": "rime.blaze", "displayName": "Blaze", "description": "American male, a polished, professional American voice, confident and steady", "languages": ["en"]},
+  {"voiceId": "rime.blossom", "displayName": "Blossom", "description": "American female, a friendly American female voice, warm and approachable", "languages": ["en"]},
+  {"voiceId": "rime.boulder", "displayName": "Boulder", "description": "American non-binary, a steady young American voice, calm and even-keeled", "languages": ["en"]},
+  {"voiceId": "rime.breeze", "displayName": "Breeze", "description": "American female, a bright young American voice, quick and smart", "languages": ["en"]},
+  {"voiceId": "rime.brenda", "displayName": "Brenda", "description": "UK female, a wise, playful older British voice, warm and unhurried", "languages": ["en"]},
+  {"voiceId": "rime.brittany", "displayName": "Brittany", "description": "American female, a bright, playful young American voice, high-energy and upbeat", "languages": ["en"]}
+]

@@ -34,14 +34,36 @@ async function loadVoices() {
     const voiceSelect = document.getElementById('voiceSelect');
     if (!voiceSelect) return;
 
-    // Vendor voice files -> optgroup labels. Order = dropdown order.
-    // smallest.ai / fish.audio are experimental SignalWire TTS engines; their
-    // voiceIds follow the same engine.voice format (smallest.<id>, fish.<id>).
+    // Vendor voice files -> optgroup labels. Order = dropdown order: the eight
+    // engines SignalWire documents first, then the undocumented/experimental ones.
+    //
+    // Each vendor's voiceId follows its own documented shape:
+    //   amazon.<voice>:<model>:<lang>   e.g. amazon.Joanna:neural:en-US
+    //   azure.<voice>                   locale is baked into the voice code
+    //   gcloud.<voice>                  ditto; Neural2/WaveNet tiers only
+    //   openai.<voice>[:<model>]        all 6 are multilingual
+    //   deepgram.<voice>                e.g. deepgram.aura-2-thalia-en
+    //   cartesia.<uuid>[:<model>]       ids are opaque UUIDs
+    //   rime.<speaker>                  Mist v2 is SignalWire's default model, so
+    //                                   these need no separate model parameter
+    //
+    // smallest.ai / fish.audio / inworld are experimental and undocumented.
+    // speechify is PENDING platform support - the engine is not live yet, so it
+    // is gated server-side (HG_ENABLE_SPEECHIFY) and its file 404s when off,
+    // which makes the fetch below fail soft and drop the optgroup.
     const VENDORS = [
         { file: '/inworld_voices.json',    label: 'Inworld' },
         { file: '/elevenlabs_voices.json', label: 'ElevenLabs' },
+        { file: '/amazon_voices.json',     label: 'Amazon Polly' },
+        { file: '/azure_voices.json',      label: 'Microsoft Azure' },
+        { file: '/gcloud_voices.json',     label: 'Google Cloud' },
+        { file: '/openai_voices.json',     label: 'OpenAI' },
+        { file: '/deepgram_voices.json',   label: 'Deepgram' },
+        { file: '/cartesia_voices.json',   label: 'Cartesia' },
+        { file: '/rime_voices.json',       label: 'Rime' },
         { file: '/smallest_voices.json',   label: 'Smallest.ai' },
         { file: '/fish_voices.json',       label: 'Fish.audio' },
+        { file: '/speechify_voices.json',  label: 'Speechify' },
     ];
 
     // Voice a first-time visitor gets. Must match DEFAULT_VOICE in app.py, or
@@ -49,63 +71,259 @@ async function loadVoices() {
     // Falls back to the first voice in the list if this id ever disappears.
     const DEFAULT_VOICE_ID = 'elevenlabs.adam';
 
+    // Stable per-vendor key for localStorage: '/amazon_voices.json' -> 'amazon'.
+    // Derived from the filename rather than the label so renaming a label in the
+    // UI cannot silently reset everyone's saved filter.
+    const vendorKey = (file) => file.replace(/^\/|_voices\.json$/g, '');
+
+    const filterPanel = document.getElementById('vendorFilter');
+    const filterList = document.getElementById('vendorFilterList');
+
     try {
+        // Fetched once. Filtering re-renders from this cache - refetching 12
+        // files on every checkbox click would be wasteful and could flicker.
         const lists = await Promise.all(VENDORS.map(async (v) => {
             try { return await (await fetch(v.file)).json(); }
             catch (e) { return []; }   // missing vendor file just skips that group
         }));
 
-        voiceSelect.innerHTML = '';
-        let total = 0;
-        let firstVoiceId = null;
-        let hasDefaultVoice = false;
+        const available = VENDORS.filter((v, i) => (lists[i] || []).length);
 
-        VENDORS.forEach((v, i) => {
-            const voices = lists[i] || [];
-            if (!voices.length) return;
-            const group = document.createElement('optgroup');
-            group.label = v.label;
-            voices.forEach(voice => {
-                const option = document.createElement('option');
-                option.value = voice.voiceId;
-                option.textContent = voice.displayName;
-                option.title = voice.description || '';
-                group.appendChild(option);
-                if (!firstVoiceId) firstVoiceId = voice.voiceId;
-                if (voice.voiceId === DEFAULT_VOICE_ID) hasDefaultVoice = true;
-            });
-            voiceSelect.appendChild(group);
-            total += voices.length;
-        });
+        // Persist what the user turned OFF, not what they left on. Storing an
+        // allowlist froze whatever happened to be available at first load: a
+        // vendor added later, or one whose fetch failed transiently (a rebuild
+        // mid-page-load), was absent from the stored list and stayed silently
+        // unchecked forever, indistinguishable from a deliberate choice. With a
+        // denylist, anything new or newly-working defaults to on.
+        // enabledVendors is the superseded key; ignored so the reset is one-time.
+        let disabled = Array.isArray(guacamoleSettings.disabledVendors)
+            ? guacamoleSettings.disabledVendors.slice()
+            : [];
 
-        // What a visitor with no (or a dead) saved pick ends up on.
-        const fallbackVoiceId = (hasDefaultVoice ? DEFAULT_VOICE_ID : firstVoiceId);
-
-        if (!guacamoleSettings.voiceSelection) {
-            guacamoleSettings.voiceSelection = fallbackVoiceId;
+        // Languages use an ALLOWLIST, deliberately the opposite of vendors above.
+        // The default is English-only, so a language we have never seen before must
+        // default to OFF - an allowlist gives that for free. (Vendors want the
+        // reverse: a newly added vendor should appear, hence the denylist there.)
+        const LANG_NAMES = { en: 'English', es: 'Spanish', hi: 'Hindi',
+                             fr: 'French', de: 'German', pt: 'Portuguese',
+                             ja: 'Japanese', ko: 'Korean', zh: 'Chinese',
+                             it: 'Italian', nl: 'Dutch', ru: 'Russian',
+                             multi: 'Multilingual' };
+        // 'multi' is a capability, not a language: voices carrying it adapt to
+        // whatever language the text is in (OpenAI's whole set, Azure's
+        // *MultilingualNeural, and any voice we know speaks more than one).
+        // They also carry their base language, so they still appear under English
+        // by default; this tag exists so you can isolate them.
+        const allLangs = [...new Set(lists.flat()
+            .flatMap((v) => (Array.isArray(v.languages) ? v.languages : [])))]
+            .filter((l) => l !== 'multi').sort();
+        if (lists.flat().some((v) => (v.languages || []).includes('multi'))) {
+            allLangs.push('multi');          // pinned last - it is not a language
         }
+        let langs = Array.isArray(guacamoleSettings.enabledLanguages)
+            ? guacamoleSettings.enabledLanguages.slice()
+            : ['en'];
 
-        if (guacamoleSettings.voiceSelection) {
-            voiceSelect.value = guacamoleSettings.voiceSelection;
-            // A saved voice that no longer exists in any vendor list makes
-            // select.value fall to '' (selectedIndex -1): the dropdown renders
-            // blank, no change event fires to self-correct, and the dead id
-            // would still be sent to /get_token. Fall back to a live voice.
-            if (voiceSelect.selectedIndex < 0 && fallbackVoiceId) {
-                console.warn(`Saved voice '${guacamoleSettings.voiceSelection}' is no longer available - falling back to ${fallbackVoiceId}`);
+        const isEnabled = (v) => !disabled.includes(vendorKey(v.file));
+        // A voice survives if ANY of its languages is enabled. Voices with no
+        // languages field are treated as English rather than hidden, so older
+        // vendor files cannot silently disappear.
+        const langOk = (voice) => {
+            const ls = Array.isArray(voice.languages) && voice.languages.length
+                ? voice.languages : ['en'];
+            return ls.some((l) => langs.includes(l));
+        };
+        const enabledKeys = () =>
+            available.map(v => vendorKey(v.file)).filter(k => !disabled.includes(k));
+
+        function renderVoiceOptions() {
+            voiceSelect.innerHTML = '';
+            let total = 0;
+            let firstVoiceId = null;
+            let hasDefaultVoice = false;
+            let hasSaved = false;
+
+            VENDORS.forEach((v, i) => {
+                const voices = lists[i] || [];
+                if (!voices.length || !isEnabled(v)) return;
+                const shown = voices.filter(langOk);
+                if (!shown.length) return;      // vendor has nothing in these languages
+                const group = document.createElement('optgroup');
+                group.label = v.label;
+                shown.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.voiceId;
+                    option.textContent = voice.displayName;
+                    option.title = voice.description || '';
+                    group.appendChild(option);
+                    if (!firstVoiceId) firstVoiceId = voice.voiceId;
+                    if (voice.voiceId === DEFAULT_VOICE_ID) hasDefaultVoice = true;
+                    if (voice.voiceId === guacamoleSettings.voiceSelection) hasSaved = true;
+                });
+                voiceSelect.appendChild(group);
+                total += shown.length;
+            });
+
+            // Every vendor unchecked: keep the last good voiceSelection so an
+            // in-flight /get_token still has something valid to send, and say so
+            // in the dropdown rather than rendering an empty control.
+            if (!total) {
+                const ph = document.createElement('option');
+                ph.textContent = 'No vendors selected';
+                ph.disabled = true;
+                voiceSelect.appendChild(ph);
+                voiceSelect.selectedIndex = 0;
+                return 0;
+            }
+
+            // What a visitor with no (or a now-hidden) pick ends up on.
+            const fallbackVoiceId = (hasDefaultVoice ? DEFAULT_VOICE_ID : firstVoiceId);
+
+            if (!guacamoleSettings.voiceSelection || !hasSaved) {
+                // A saved voice that no longer exists - dead id, or its vendor was
+                // just unchecked - makes select.value fall to '' (selectedIndex -1):
+                // the dropdown renders blank, no change event fires to self-correct,
+                // and the dead id would still be sent to /get_token.
+                if (guacamoleSettings.voiceSelection && !hasSaved) {
+                    console.warn(`Voice '${guacamoleSettings.voiceSelection}' is not in the enabled vendors - falling back to ${fallbackVoiceId}`);
+                }
                 guacamoleSettings.voiceSelection = fallbackVoiceId;
-                voiceSelect.value = fallbackVoiceId;
                 localStorage.setItem('guacamoleSettings', JSON.stringify(guacamoleSettings));
             }
+            voiceSelect.value = guacamoleSettings.voiceSelection;
+            return total;
         }
 
+        function persistVendors() {
+            guacamoleSettings.disabledVendors = disabled;
+            guacamoleSettings.enabledLanguages = langs;
+            localStorage.setItem('guacamoleSettings', JSON.stringify(guacamoleSettings));
+        }
+
+        function buildLangPanel() {
+            const el = document.getElementById('langFilterList');
+            if (!el) return;
+            el.innerHTML = '';
+            allLangs.forEach((code) => {
+                // count how many voices this language would contribute, so the
+                // cost of enabling it is visible before clicking
+                const n = lists.flat().filter((v) => {
+                    const ls = Array.isArray(v.languages) && v.languages.length ? v.languages : ['en'];
+                    return ls.includes(code);
+                }).length;
+                const label = document.createElement('label');
+                label.className = 'check';
+                const box = document.createElement('input');
+                box.type = 'checkbox';
+                box.checked = langs.includes(code);
+                const text = document.createElement('span');
+                text.textContent = (LANG_NAMES[code] || code) + ' ';
+                const num = document.createElement('span');
+                num.className = 'vendor-count';
+                num.textContent = `(${n})`;
+                text.appendChild(num);
+                label.append(box, text);
+                el.appendChild(label);
+
+                box.addEventListener('change', () => {
+                    langs = box.checked
+                        ? langs.concat([code]).filter((c, i, a) => a.indexOf(c) === i)
+                        : langs.filter((c) => c !== code);
+                    persistVendors();
+                    renderVoiceOptions();
+                });
+            });
+        }
+
+        function setLangs(all) {
+            // Labelled "English" rather than "None": clearing every language would
+            // empty the dropdown entirely, and English-only is the default state
+            // this control exists to return to.
+            langs = all ? allLangs.slice() : ['en'];   // 'English' resets to en only
+            persistVendors();
+            buildLangPanel();
+            renderVoiceOptions();
+        }
+
+        function buildFilterPanel() {
+            if (!filterList) return;
+            filterList.innerHTML = '';
+            VENDORS.forEach((v, i) => {
+                const count = (lists[i] || []).length;
+                const key = vendorKey(v.file);
+                const label = document.createElement('label');
+                label.className = 'check' + (count ? '' : ' is-empty');
+                const box = document.createElement('input');
+                box.type = 'checkbox';
+                box.dataset.vendor = key;
+                box.checked = count > 0 && !disabled.includes(key);
+                box.disabled = !count;
+                const text = document.createElement('span');
+                // textContent, not innerHTML - vendor labels are ours, but this
+                // stays consistent with the rest of the rendering in this file.
+                text.textContent = v.label;
+                const num = document.createElement('span');
+                num.className = 'vendor-count';
+                num.textContent = count ? `(${count})` : '(unavailable)';
+                text.appendChild(num);
+                label.append(box, text);
+                filterList.appendChild(label);
+
+                box.addEventListener('change', () => {
+                    disabled = box.checked
+                        ? disabled.filter(k => k !== key)
+                        : disabled.concat([key]).filter((k, n, a) => a.indexOf(k) === n);
+                    persistVendors();
+                    renderVoiceOptions();
+                });
+            });
+        }
+
+        function setAll(on) {
+            disabled = on ? [] : available.map(v => vendorKey(v.file));
+            persistVendors();
+            buildFilterPanel();
+            buildLangPanel();
+            renderVoiceOptions();
+        }
+
+        function showPanel() { if (filterPanel) filterPanel.hidden = false; }
+        function hidePanel() { if (filterPanel) filterPanel.hidden = true; }
+
+        buildLangPanel();
+        buildFilterPanel();
+        const total = renderVoiceOptions();
+
+        document.getElementById('langAll')?.addEventListener('click', () => setLangs(true));
+        document.getElementById('langNone')?.addEventListener('click', () => setLangs(false));
+        document.getElementById('vendorAll')?.addEventListener('click', () => setAll(true));
+        document.getElementById('vendorNone')?.addEventListener('click', () => setAll(false));
+
+        // Reveal the filter only while the dropdown is being used. mousedown fires
+        // before the native option list opens; focus covers keyboard users.
+        voiceSelect.addEventListener('mousedown', showPanel);
+        voiceSelect.addEventListener('focus', showPanel);
+        // Clicking a voice closes the dropdown, so the filter should go too.
+        voiceSelect.addEventListener('change', hidePanel);
+
+        document.addEventListener('click', (e) => {
+            if (filterPanel && !filterPanel.hidden
+                && !filterPanel.contains(e.target) && e.target !== voiceSelect) {
+                hidePanel();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hidePanel();
+        });
+
         voiceSelect.addEventListener('change', (e) => {
+            if (!e.target.value) return;   // ignore the disabled placeholder
             guacamoleSettings.voiceSelection = e.target.value;
             localStorage.setItem('guacamoleSettings', JSON.stringify(guacamoleSettings));
             console.log('Voice saved to localStorage:', guacamoleSettings);
         });
 
-        console.log('Loaded voices:', total);
+        console.log(`Loaded voices: ${total} from ${enabledKeys().length}/${available.length} vendors`);
     } catch (error) {
         console.error('Failed to load voices:', error);
         const option = document.createElement('option');

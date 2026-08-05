@@ -1,0 +1,10 @@
+[
+  {"voiceId": "speechify.beatrice_32", "displayName": "Beatrice", "description": "Simba 3.2 English voice", "languages": ["en"]},
+  {"voiceId": "speechify.dominic_32", "displayName": "Dominic", "description": "Simba 3.2 English voice", "languages": ["en"]},
+  {"voiceId": "speechify.edmund_32", "displayName": "Edmund", "description": "Simba 3.2 English voice", "languages": ["en"]},
+  {"voiceId": "speechify.geffen_32", "displayName": "Geffen", "description": "Simba 3.2 English voice", "languages": ["en"]},
+  {"voiceId": "speechify.harper_32", "displayName": "Harper", "description": "Simba 3.2 English voice", "languages": ["en"]},
+  {"voiceId": "speechify.hugh_32", "displayName": "Hugh", "description": "Simba 3.2 English voice", "languages": ["en"]},
+  {"voiceId": "speechify.imogen_32", "displayName": "Imogen", "description": "Simba 3.2 English voice", "languages": ["en"]},
+  {"voiceId": "speechify.wyatt_32", "displayName": "Wyatt", "description": "Simba 3.2 English voice", "languages": ["en"]}
+]

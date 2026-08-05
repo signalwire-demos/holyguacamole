@@ -1,0 +1,266 @@
+[
+  {
+    "voiceId": "azure.en-US-AmberNeural",
+    "displayName": "Amber (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-AndrewNeural",
+    "displayName": "Andrew (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-AriaNeural",
+    "displayName": "Aria (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-AshleyNeural",
+    "displayName": "Ashley (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-AvaNeural",
+    "displayName": "Ava (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-BrandonNeural",
+    "displayName": "Brandon (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-BrianNeural",
+    "displayName": "Brian (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-ChristopherNeural",
+    "displayName": "Christopher (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-CoraNeural",
+    "displayName": "Cora (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-DavisNeural",
+    "displayName": "Davis (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-ElizabethNeural",
+    "displayName": "Elizabeth (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-EmmaNeural",
+    "displayName": "Emma (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-EricNeural",
+    "displayName": "Eric (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-GuyNeural",
+    "displayName": "Guy (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-JacobNeural",
+    "displayName": "Jacob (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-JaneNeural",
+    "displayName": "Jane (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-JasonNeural",
+    "displayName": "Jason (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.en-US-JennyNeural",
+    "displayName": "Jenny (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "azure.es-ES-ElviraNeural",
+    "displayName": "Elvira (es-ES)",
+    "description": "European Spanish female",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "azure.es-ES-AlvaroNeural",
+    "displayName": "Alvaro (es-ES)",
+    "description": "European Spanish male",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "azure.es-MX-DaliaNeural",
+    "displayName": "Dalia (es-MX)",
+    "description": "Mexican Spanish female",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "azure.es-MX-JorgeNeural",
+    "displayName": "Jorge (es-MX)",
+    "description": "Mexican Spanish male",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "azure.fr-FR-DeniseNeural",
+    "displayName": "Denise (fr-FR)",
+    "description": "French female",
+    "languages": ["fr"]
+  },
+  {
+    "voiceId": "azure.fr-FR-HenriNeural",
+    "displayName": "Henri (fr-FR)",
+    "description": "French male",
+    "languages": ["fr"]
+  },
+  {
+    "voiceId": "azure.de-DE-KatjaNeural",
+    "displayName": "Katja (de-DE)",
+    "description": "German female",
+    "languages": ["de"]
+  },
+  {
+    "voiceId": "azure.de-DE-ConradNeural",
+    "displayName": "Conrad (de-DE)",
+    "description": "German male",
+    "languages": ["de"]
+  },
+  {
+    "voiceId": "azure.it-IT-ElsaNeural",
+    "displayName": "Elsa (it-IT)",
+    "description": "Italian female",
+    "languages": ["it"]
+  },
+  {
+    "voiceId": "azure.it-IT-DiegoNeural",
+    "displayName": "Diego (it-IT)",
+    "description": "Italian male",
+    "languages": ["it"]
+  },
+  {
+    "voiceId": "azure.pt-BR-FranciscaNeural",
+    "displayName": "Francisca (pt-BR)",
+    "description": "Brazilian Portuguese female",
+    "languages": ["pt"]
+  },
+  {
+    "voiceId": "azure.pt-BR-AntonioNeural",
+    "displayName": "Antonio (pt-BR)",
+    "description": "Brazilian Portuguese male",
+    "languages": ["pt"]
+  },
+  {
+    "voiceId": "azure.ja-JP-NanamiNeural",
+    "displayName": "Nanami (ja-JP)",
+    "description": "Japanese female",
+    "languages": ["ja"]
+  },
+  {
+    "voiceId": "azure.ja-JP-KeitaNeural",
+    "displayName": "Keita (ja-JP)",
+    "description": "Japanese male",
+    "languages": ["ja"]
+  },
+  {
+    "voiceId": "azure.ko-KR-SunHiNeural",
+    "displayName": "SunHi (ko-KR)",
+    "description": "Korean female",
+    "languages": ["ko"]
+  },
+  {
+    "voiceId": "azure.ko-KR-InJoonNeural",
+    "displayName": "InJoon (ko-KR)",
+    "description": "Korean male",
+    "languages": ["ko"]
+  },
+  {
+    "voiceId": "azure.zh-CN-XiaoxiaoNeural",
+    "displayName": "Xiaoxiao (zh-CN)",
+    "description": "Mandarin Chinese female",
+    "languages": ["zh"]
+  },
+  {
+    "voiceId": "azure.zh-CN-YunxiNeural",
+    "displayName": "Yunxi (zh-CN)",
+    "description": "Mandarin Chinese male",
+    "languages": ["zh"]
+  },
+  {
+    "voiceId": "azure.hi-IN-AnanyaNeural",
+    "displayName": "Ananya (hi-IN)",
+    "description": "Hindi female",
+    "languages": ["hi"]
+  },
+  {
+    "voiceId": "azure.hi-IN-AaravNeural",
+    "displayName": "Aarav (hi-IN)",
+    "description": "Hindi male",
+    "languages": ["hi"]
+  },
+  {
+    "voiceId": "azure.en-GB-AdaMultilingualNeural",
+    "displayName": "Ada (en-GB, multi)",
+    "description": "British female, adapts to the input language",
+    "languages": ["en", "multi"]
+  },
+  {
+    "voiceId": "azure.en-US-AvaMultilingualNeural",
+    "displayName": "Ava (en-US, multi)",
+    "description": "American female, adapts to the input language",
+    "languages": ["en", "multi"]
+  },
+  {
+    "voiceId": "azure.en-US-AmandaMultilingualNeural",
+    "displayName": "Amanda (en-US, multi)",
+    "description": "American female, adapts to the input language",
+    "languages": ["en", "multi"]
+  },
+  {
+    "voiceId": "azure.en-GB-OllieMultilingualNeural",
+    "displayName": "Ollie (en-GB, multi)",
+    "description": "British male, adapts to the input language",
+    "languages": ["en", "multi"]
+  },
+  {
+    "voiceId": "azure.en-US-AndrewMultilingualNeural",
+    "displayName": "Andrew (en-US, multi)",
+    "description": "American male, adapts to the input language",
+    "languages": ["en", "multi"]
+  },
+  {
+    "voiceId": "azure.en-US-AdamMultilingualNeural",
+    "displayName": "Adam (en-US, multi)",
+    "description": "American male, adapts to the input language",
+    "languages": ["en", "multi"]
+  }
+]
