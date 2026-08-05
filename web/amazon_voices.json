@@ -1,22 +1,218 @@
 [
-  {"voiceId": "amazon.Danielle:neural:en-US", "displayName": "Danielle", "description": "American female", "languages": ["en"]},
-  {"voiceId": "amazon.Gregory:neural:en-US", "displayName": "Gregory", "description": "American male", "languages": ["en"]},
-  {"voiceId": "amazon.Joanna:neural:en-US", "displayName": "Joanna", "description": "American female", "languages": ["en"]},
-  {"voiceId": "amazon.Joey:neural:en-US", "displayName": "Joey", "description": "American male", "languages": ["en"]},
-  {"voiceId": "amazon.Kendra:neural:en-US", "displayName": "Kendra", "description": "American female", "languages": ["en"]},
-  {"voiceId": "amazon.Kimberly:neural:en-US", "displayName": "Kimberly", "description": "American female", "languages": ["en"]},
-  {"voiceId": "amazon.Matthew:neural:en-US", "displayName": "Matthew", "description": "American male", "languages": ["en"]},
-  {"voiceId": "amazon.Ruth:neural:en-US", "displayName": "Ruth", "description": "American female", "languages": ["en"]},
-  {"voiceId": "amazon.Salli:neural:en-US", "displayName": "Salli", "description": "American female", "languages": ["en"]},
-  {"voiceId": "amazon.Stephen:neural:en-US", "displayName": "Stephen", "description": "American male", "languages": ["en"]},
-  {"voiceId": "amazon.Amy:neural:en-GB", "displayName": "Amy", "description": "British female", "languages": ["en"]},
-  {"voiceId": "amazon.Arthur:neural:en-GB", "displayName": "Arthur", "description": "British male", "languages": ["en"]},
-  {"voiceId": "amazon.Brian:neural:en-GB", "displayName": "Brian", "description": "British male", "languages": ["en"]},
-  {"voiceId": "amazon.Emma:neural:en-GB", "displayName": "Emma", "description": "British female", "languages": ["en"]},
-  {"voiceId": "amazon.Olivia:neural:en-AU", "displayName": "Olivia", "description": "Australian female", "languages": ["en"]},
-  {"voiceId": "amazon.Niamh:neural:en-IE", "displayName": "Niamh", "description": "Irish female", "languages": ["en"]},
-  {"voiceId": "amazon.Kajal:neural:en-IN", "displayName": "Kajal", "description": "Indian female", "languages": ["en"]},
-  {"voiceId": "amazon.Aria:neural:en-NZ", "displayName": "Aria", "description": "New Zealand female", "languages": ["en"]},
-  {"voiceId": "amazon.Ayanda:neural:en-ZA", "displayName": "Ayanda", "description": "South African female", "languages": ["en"]},
-  {"voiceId": "amazon.Jasmine:neural:en-SG", "displayName": "Jasmine", "description": "Singaporean female", "languages": ["en"]}
+  {
+    "voiceId": "amazon.Danielle:neural:en-US",
+    "displayName": "Danielle (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Gregory:neural:en-US",
+    "displayName": "Gregory (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Joanna:neural:en-US",
+    "displayName": "Joanna (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Joey:neural:en-US",
+    "displayName": "Joey (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Kendra:neural:en-US",
+    "displayName": "Kendra (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Kimberly:neural:en-US",
+    "displayName": "Kimberly (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Matthew:neural:en-US",
+    "displayName": "Matthew (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Ruth:neural:en-US",
+    "displayName": "Ruth (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Salli:neural:en-US",
+    "displayName": "Salli (en-US)",
+    "description": "American female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Stephen:neural:en-US",
+    "displayName": "Stephen (en-US)",
+    "description": "American male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Amy:neural:en-GB",
+    "displayName": "Amy (en-GB)",
+    "description": "British female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Arthur:neural:en-GB",
+    "displayName": "Arthur (en-GB)",
+    "description": "British male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Brian:neural:en-GB",
+    "displayName": "Brian (en-GB)",
+    "description": "British male",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Emma:neural:en-GB",
+    "displayName": "Emma (en-GB)",
+    "description": "British female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Olivia:neural:en-AU",
+    "displayName": "Olivia (en-AU)",
+    "description": "Australian female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Niamh:neural:en-IE",
+    "displayName": "Niamh (en-IE)",
+    "description": "Irish female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Kajal:neural:en-IN",
+    "displayName": "Kajal (en-IN)",
+    "description": "Indian female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Aria:neural:en-NZ",
+    "displayName": "Aria (en-NZ)",
+    "description": "New Zealand female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Ayanda:neural:en-ZA",
+    "displayName": "Ayanda (en-ZA)",
+    "description": "South African female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Jasmine:neural:en-SG",
+    "displayName": "Jasmine (en-SG)",
+    "description": "Singaporean female",
+    "languages": ["en"]
+  },
+  {
+    "voiceId": "amazon.Lucia:neural:es-ES",
+    "displayName": "Lucia (es-ES)",
+    "description": "European Spanish female",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "amazon.Enrique:neural:es-ES",
+    "displayName": "Enrique (es-ES)",
+    "description": "European Spanish male",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "amazon.Vicki:neural:de-DE",
+    "displayName": "Vicki (de-DE)",
+    "description": "German female",
+    "languages": ["de"]
+  },
+  {
+    "voiceId": "amazon.Daniel:neural:de-DE",
+    "displayName": "Daniel (de-DE)",
+    "description": "German male",
+    "languages": ["de"]
+  },
+  {
+    "voiceId": "amazon.Bianca:neural:it-IT",
+    "displayName": "Bianca (it-IT)",
+    "description": "Italian female",
+    "languages": ["it"]
+  },
+  {
+    "voiceId": "amazon.Adriano:neural:it-IT",
+    "displayName": "Adriano (it-IT)",
+    "description": "Italian male",
+    "languages": ["it"]
+  },
+  {
+    "voiceId": "amazon.Thiago:neural:pt-BR",
+    "displayName": "Thiago (pt-BR)",
+    "description": "Brazilian Portuguese male",
+    "languages": ["pt"]
+  },
+  {
+    "voiceId": "amazon.Kazuha:neural:ja-JP",
+    "displayName": "Kazuha (ja-JP)",
+    "description": "Japanese female",
+    "languages": ["ja"]
+  },
+  {
+    "voiceId": "amazon.Takumi:neural:ja-JP",
+    "displayName": "Takumi (ja-JP)",
+    "description": "Japanese male",
+    "languages": ["ja"]
+  },
+  {
+    "voiceId": "amazon.Seoyeon:neural:ko-KR",
+    "displayName": "Seoyeon (ko-KR)",
+    "description": "Korean female",
+    "languages": ["ko"]
+  },
+  {
+    "voiceId": "amazon.Kajal:neural:hi-IN",
+    "displayName": "Kajal (hi-IN)",
+    "description": "Hindi female",
+    "languages": ["hi"]
+  },
+  {
+    "voiceId": "amazon.Mia:neural:es-MX",
+    "displayName": "Mia (es-MX)",
+    "description": "Mexican Spanish female",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "amazon.Andrés:neural:es-MX",
+    "displayName": "Andrés (es-MX)",
+    "description": "Mexican Spanish male",
+    "languages": ["es"]
+  },
+  {
+    "voiceId": "amazon.Léa:neural:fr-FR",
+    "displayName": "Léa (fr-FR)",
+    "description": "French female",
+    "languages": ["fr"]
+  },
+  {
+    "voiceId": "amazon.Rémi:neural:fr-FR",
+    "displayName": "Rémi (fr-FR)",
+    "description": "French male",
+    "languages": ["fr"]
+  },
+  {
+    "voiceId": "amazon.Zhiyu:neural:cmn-CN",
+    "displayName": "Zhiyu (cmn-CN)",
+    "description": "Mandarin Chinese female",
+    "languages": ["zh"]
+  }
 ]

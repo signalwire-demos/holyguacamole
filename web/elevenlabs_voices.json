@@ -130,5 +130,41 @@
     "displayName": "Will",
     "description": "Friendly, approachable male voice",
     "languages": ["en"]
+  },
+  {
+    "voiceId": "elevenlabs.adam:eleven_multilingual_v2",
+    "displayName": "Adam (multi)",
+    "description": "Deep, mature male voice with a warm tone, adapts to the input language",
+    "languages": ["en", "multi"]
+  },
+  {
+    "voiceId": "elevenlabs.alice:eleven_multilingual_v2",
+    "displayName": "Alice (multi)",
+    "description": "Confident, articulate female voice, adapts to the input language",
+    "languages": ["en", "multi"]
+  },
+  {
+    "voiceId": "elevenlabs.brian:eleven_multilingual_v2",
+    "displayName": "Brian (multi)",
+    "description": "Friendly, conversational male voice, adapts to the input language",
+    "languages": ["en", "multi"]
+  },
+  {
+    "voiceId": "elevenlabs.charlotte:eleven_multilingual_v2",
+    "displayName": "Charlotte (multi)",
+    "description": "Professional, clear female voice, adapts to the input language",
+    "languages": ["en", "multi"]
+  },
+  {
+    "voiceId": "elevenlabs.george:eleven_multilingual_v2",
+    "displayName": "George (multi)",
+    "description": "Warm British male voice, adapts to the input language",
+    "languages": ["en", "multi"]
+  },
+  {
+    "voiceId": "elevenlabs.sarah:eleven_multilingual_v2",
+    "displayName": "Sarah (multi)",
+    "description": "Soft, gentle female voice, adapts to the input language",
+    "languages": ["en", "multi"]
   }
 ]

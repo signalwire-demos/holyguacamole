@@ -884,6 +884,13 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        /* Separates the Languages block from the Vendors block. */
+        .vendor-filter-head--split {
+            margin-top: 10px;
+            padding-top: 9px;
+            border-top: 1px solid var(--hairline);
+        }
+
         .vendor-count {
             margin-left: 4px;
             color: var(--fg-subtle);
@@ -1360,6 +1367,15 @@
                     <div id="vendorFilter" class="vendor-filter" hidden
                          role="group" aria-label="Filter voices by vendor">
                         <div class="vendor-filter-head">
+                            <span>Languages</span>
+                            <div class="vendor-filter-actions">
+                                <button type="button" id="langAll">All</button>
+                                <button type="button" id="langNone">English</button>
+                            </div>
+                        </div>
+                        <div id="langFilterList" class="vendor-filter-list"></div>
+
+                        <div class="vendor-filter-head vendor-filter-head--split">
                             <span>Vendors</span>
                             <div class="vendor-filter-actions">
                                 <button type="button" id="vendorAll">All</button>
@@ -1399,6 +1415,6 @@
     <!-- SignalWire Browser SDK v4 from CDN -->
     <script src="https://cdn.signalwire.com/@signalwire/js@4.0.0-rc.0"></script>
     <!-- App Logic -->
-    <script src="/app.js?v=13"></script>
+    <script src="/app.js?v=20"></script>
 </body>
 </html>

@@ -2640,7 +2640,14 @@ def create_server():
             # withdrawn (a removed voice would still be selectable, and a removed
             # id sent to /get_token). Revalidate every time; these are ~1-6 KB.
             response.headers["Cache-Control"] = "no-cache"
-        elif path.endswith((".png", ".jpg", ".jpeg", ".mp4", ".woff2", ".json")):
+        elif path.endswith(".mp4"):
+            # The avatar loops (video_idle_file / video_talking_file) are replaced
+            # in place under fixed names, so max-age let Cloudflare keep serving a
+            # superseded video for a day - observed as cf-cache-status:HIT with the
+            # previous file's ETag and length while the origin had the new one.
+            # Revalidate every time; the ETag still makes that a cheap 304.
+            response.headers["Cache-Control"] = "no-cache"
+        elif path.endswith((".png", ".jpg", ".jpeg", ".woff2", ".json")):
             # Content-addressed by name here; a day of caching is plenty and the
             # ETag still forces a revalidate after that.
             response.headers.setdefault("Cache-Control", "public, max-age=86400")
